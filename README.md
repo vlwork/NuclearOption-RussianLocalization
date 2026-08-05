@@ -1,7 +1,12 @@
 # Nuclear Option — LocalizationPatch (source)
 
-Source code for `LocalizationPatch.dll`, the BepInEx plugin behind every
-Nuclear Option language patch published under this account.
+Source code for the BepInEx plugins behind every Nuclear Option language patch published
+under this account:
+
+| Assembly | Source | Role |
+|---|---|---|
+| `LocalizationPatch.dll` | [`Plugin.cs`](Plugin.cs) | the translation plugin itself |
+| `LocalizationPatchDropdown.dll` | [`LocalizationPatchDropdown/`](LocalizationPatchDropdown) | optional addon; translates dropdown options, which the text-setter hook does not see |
 
 The plugin itself contains **no translations**. It loads a `<lang>.json` file that sits
 next to it and substitutes text at runtime, so one binary serves all languages. Each
@@ -44,7 +49,8 @@ If the game is not at the default Steam path:
 dotnet build -c Release -p:NuclearOptionDir="D:\Games\Nuclear Option"
 ```
 
-Output lands in `bin/Release/net472/LocalizationPatch.dll`.
+Output lands in `bin/Release/net472/LocalizationPatch.dll`. The dropdown addon builds the
+same way from `LocalizationPatchDropdown/`.
 
 Builds are not byte-identical between machines — .NET writes a fresh module MVID on
 every compile and embeds source paths. To confirm a released DLL matches this source,
