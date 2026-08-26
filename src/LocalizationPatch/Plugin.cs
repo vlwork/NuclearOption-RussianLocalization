@@ -15,9 +15,19 @@ using UnityEngine.TextCore.LowLevel;
 
 namespace KoreanPatch
 {
-    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.5.0")]
+    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.6.0")]
     public class Plugin : BaseUnityPlugin
     {
+        private sealed class AutoFitState
+        {
+            public float OriginalFontSize;
+            public bool OriginalAutoSizing;
+            public float OriginalFontSizeMin;
+            public float OriginalFontSizeMax;
+            public string LastText;
+            public float AppliedFontSize;
+        }
+
         internal static ManualLogSource Log;
         internal static Plugin Instance;
         internal static Harmony HarmonyInstance;
@@ -77,6 +87,9 @@ namespace KoreanPatch
         private static float textScanInterval = 0.3f;
         private int lastSceneIndex = -1;
         private HashSet<int> translatedInstances = new HashSet<int>();
+        private float lastFastTmpScanTime = -999f;
+        private const float FAST_TMP_SCAN_INTERVAL = 0.02f;
+        private readonly Dictionary<int, AutoFitState> autoFitStates = new Dictionary<int, AutoFitState>();
 
         private void Awake()
         {
@@ -161,7 +174,7 @@ namespace KoreanPatch
             // Also register scene load callback as additional safety net
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Log.LogInfo($"Localization Patch v3.5.0 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
+            Log.LogInfo($"Localization Patch v3.6.0 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
         }
 
         /// <summary>
@@ -258,9 +271,13 @@ namespace KoreanPatch
 
                     if (targetMethod != null)
                     {
+                        var prefix = typeof(TMP_OnEnable_Patch).GetMethod("Prefix",
+                            BindingFlags.Static | BindingFlags.NonPublic);
                         var postfix = typeof(TMP_OnEnable_Patch).GetMethod("Postfix",
                             BindingFlags.Static | BindingFlags.NonPublic);
-                        HarmonyInstance.Patch(targetMethod, postfix: new HarmonyMethod(postfix));
+                        HarmonyInstance.Patch(targetMethod,
+                            prefix: new HarmonyMethod(prefix),
+                            postfix: new HarmonyMethod(postfix));
                         applied++;
                         Log.LogInfo($"Patched: {tmpType.Name}.OnEnable — instant translation on show");
                     }
@@ -288,6 +305,12 @@ namespace KoreanPatch
         /// </summary>
         internal void DoPerFrameLogic()
         {
+            if (Enabled && Time.unscaledTime - lastFastTmpScanTime >= FAST_TMP_SCAN_INTERVAL)
+            {
+                lastFastTmpScanTime = Time.unscaledTime;
+                FastScanTmpTextAndFit();
+            }
+
             // Primary: F10 (may conflict with Windows/game); Alt: F9
             if (Input.GetKeyDown(KeyCode.F10) || Input.GetKeyDown(KeyCode.F9))
             {
@@ -1065,6 +1088,264 @@ namespace KoreanPatch
         }
 
         /// <summary>
+        /// Fast pass used by the stable 3.6.0 build. It catches active TMP labels between the
+        /// slower full sweeps and applies text-only fitting to long localized descriptions.
+        /// </summary>
+        private void FastScanTmpTextAndFit()
+        {
+            try
+            {
+                var tmpTexts = Resources.FindObjectsOfTypeAll<TMP_Text>();
+                foreach (var tmp in tmpTexts)
+                {
+                    if (tmp == null || tmp.gameObject == null || !tmp.enabled || !tmp.gameObject.activeInHierarchy)
+                        continue;
+
+                    TranslateTmpComponent(tmp);
+
+                    string current = tmp.text;
+                    if (!string.IsNullOrEmpty(current))
+                        ApplySelectiveAutoFit(tmp, current);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning($"Fast TMP scan error: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Finds a visual boundary used only for measuring available space. The returned
+        /// RectTransform is never resized, repositioned, or otherwise modified.
+        /// </summary>
+        private RectTransform FindAutoFitContainer(TMP_Text tmp)
+        {
+            if (!(tmp is TextMeshProUGUI) || tmp.rectTransform == null)
+                return null;
+
+            RectTransform textRect = tmp.rectTransform;
+            float textWidth = Mathf.Abs(textRect.rect.width);
+            RectTransform fallback = null;
+            Transform parent = textRect.parent;
+
+            int depth = 0;
+            while (depth < 9 && parent != null)
+            {
+                var candidate = parent as RectTransform;
+                if (candidate != null)
+                {
+                    float width = Mathf.Abs(candidate.rect.width);
+                    float height = Mathf.Abs(candidate.rect.height);
+                    if (width >= 220f && height >= 85f &&
+                        (textWidth <= 1f || width <= textWidth * 2.25f))
+                    {
+                        if (fallback == null)
+                            fallback = candidate;
+
+                        if (parent.GetComponent<Image>() != null ||
+                            parent.GetComponent<Mask>() != null ||
+                            parent.GetComponent<RectMask2D>() != null)
+                            return candidate;
+                    }
+                }
+
+                depth++;
+                parent = parent.parent;
+            }
+
+            return fallback;
+        }
+
+        private bool IsAutoFitDescription(TMP_Text tmp, string text)
+        {
+            if (!(tmp is TextMeshProUGUI)) return false;
+            if (string.IsNullOrEmpty(text) || text.Length < 180) return false;
+
+            RectTransform textRect = tmp.rectTransform;
+            if (textRect == null || Mathf.Abs(textRect.rect.width) < 250f) return false;
+            if (!ContainsKorean(text)) return false;
+
+            Transform current = tmp.transform;
+            int depth = 0;
+            while (depth < 8 && current != null)
+            {
+                string name = (current.name ?? string.Empty).ToLowerInvariant();
+                if (name.Contains("encycl") || name.Contains("description") ||
+                    name.Contains("details") || name.Contains("unitinfo") ||
+                    name.Contains("unit info"))
+                    return true;
+
+                depth++;
+                current = current.parent;
+            }
+
+            return text.Length >= 280 && FindAutoFitContainer(tmp) != null;
+        }
+
+        private bool TryGetAutoFitArea(
+            TMP_Text tmp,
+            out float availableWidth,
+            out float availableHeight,
+            out string containerName)
+        {
+            availableWidth = 0f;
+            availableHeight = 0f;
+            containerName = "(none)";
+
+            try
+            {
+                RectTransform textRect = tmp.rectTransform;
+                RectTransform container = FindAutoFitContainer(tmp);
+                if (textRect == null || container == null) return false;
+
+                containerName = container.name;
+                var corners = new Vector3[4];
+                textRect.GetWorldCorners(corners);
+                Vector3 topLeft = container.InverseTransformPoint(corners[1]);
+                Vector3 topRight = container.InverseTransformPoint(corners[2]);
+                Rect bounds = container.rect;
+
+                float left = Mathf.Max(Mathf.Min(topLeft.x, topRight.x), bounds.xMin + 6f);
+                float right = Mathf.Min(Mathf.Max(topLeft.x, topRight.x), bounds.xMax - 6f);
+                availableWidth = right - left;
+
+                float top = Mathf.Max(topLeft.y, topRight.y);
+                availableHeight = top - (bounds.yMin + 7f);
+
+                float ownWidth = Mathf.Abs(textRect.rect.width);
+                if (ownWidth > 1f)
+                    availableWidth = availableWidth <= 1f
+                        ? ownWidth
+                        : Mathf.Min(availableWidth, ownWidth);
+
+                return availableWidth > 100f && availableHeight > 45f;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool FitsAutoFitArea(TMP_Text tmp, string text, float fontSize, float width, float height)
+        {
+            float originalFontSize = tmp.fontSize;
+            bool originalAutoSizing = tmp.enableAutoSizing;
+            try
+            {
+                tmp.enableAutoSizing = false;
+                tmp.fontSize = fontSize;
+                return tmp.GetPreferredValues(text, width, 100000f).y <= height * 0.985f;
+            }
+            catch
+            {
+                return true;
+            }
+            finally
+            {
+                tmp.fontSize = originalFontSize;
+                tmp.enableAutoSizing = originalAutoSizing;
+            }
+        }
+
+        private void RestoreAutoFit(TMP_Text tmp, AutoFitState state)
+        {
+            if (tmp == null || state == null) return;
+            try
+            {
+                tmp.enableAutoSizing = state.OriginalAutoSizing;
+                tmp.fontSize = state.OriginalFontSize;
+                tmp.fontSizeMin = state.OriginalFontSizeMin;
+                tmp.fontSizeMax = state.OriginalFontSizeMax;
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Shrinks only the TMP component's font settings. Parent RectTransforms and layout
+        /// containers are measurement-only and are never changed.
+        /// </summary>
+        private void ApplySelectiveAutoFit(TMP_Text tmp, string text)
+        {
+            if (tmp == null || tmp.gameObject == null) return;
+
+            int id = tmp.GetInstanceID();
+            AutoFitState state;
+            autoFitStates.TryGetValue(id, out state);
+
+            if (!IsAutoFitDescription(tmp, text))
+            {
+                if (state != null)
+                {
+                    RestoreAutoFit(tmp, state);
+                    autoFitStates.Remove(id);
+                }
+                return;
+            }
+
+            if (state != null && state.LastText != text)
+                RestoreAutoFit(tmp, state);
+
+            float availableWidth;
+            float availableHeight;
+            string containerName;
+            if ((state != null && state.LastText == text) ||
+                !TryGetAutoFitArea(tmp, out availableWidth, out availableHeight, out containerName))
+                return;
+
+            float originalFontSize = state?.OriginalFontSize ?? tmp.fontSize;
+            if (FitsAutoFitArea(tmp, text, originalFontSize, availableWidth, availableHeight))
+            {
+                if (state != null)
+                {
+                    RestoreAutoFit(tmp, state);
+                    autoFitStates.Remove(id);
+                }
+                return;
+            }
+
+            if (state == null)
+            {
+                state = new AutoFitState
+                {
+                    OriginalFontSize = tmp.fontSize,
+                    OriginalAutoSizing = tmp.enableAutoSizing,
+                    OriginalFontSizeMin = tmp.fontSizeMin,
+                    OriginalFontSizeMax = tmp.fontSizeMax
+                };
+                autoFitStates[id] = state;
+                originalFontSize = state.OriginalFontSize;
+            }
+
+            float lower = Mathf.Max(9f, originalFontSize * 0.42f);
+            float upper = originalFontSize;
+            float fitted = lower;
+            for (int i = 0; i < 10; i++)
+            {
+                float candidate = (lower + upper) * 0.5f;
+                if (FitsAutoFitArea(tmp, text, candidate, availableWidth, availableHeight))
+                {
+                    fitted = candidate;
+                    lower = candidate;
+                }
+                else
+                {
+                    upper = candidate;
+                }
+            }
+
+            tmp.enableAutoSizing = false;
+            tmp.fontSize = fitted;
+            state.LastText = text;
+            state.AppliedFontSize = fitted;
+            try { tmp.ForceMeshUpdate(true, true); }
+            catch { }
+
+            Log.LogInfo($"[AutoFit] '{tmp.name}' container='{containerName}' " +
+                        $"area={availableWidth:0}x{availableHeight:0}, " +
+                        $"font={originalFontSize:0.0}->{fitted:0.0}, chars={text.Length}");
+        }
+
+        /// <summary>
         /// Periodic safety net for text the setter hooks never see (prefab-authored strings,
         /// or text swapped in by code paths we do not patch).
         ///
@@ -1670,6 +1951,13 @@ namespace KoreanPatch
         /// </summary>
         static class TMP_OnEnable_Patch
         {
+            static void Prefix(TMP_Text __instance)
+            {
+                if (isPatching || !Enabled || Instance == null) return;
+                try { Instance.TranslateTmpComponent(__instance); }
+                catch { }
+            }
+
             static void Postfix(TMP_Text __instance)
             {
                 if (isPatching || !Enabled || Instance == null) return;
@@ -1802,7 +2090,7 @@ namespace KoreanPatch
         private void DrawWindow(int id)
         {
             GUILayout.BeginVertical();
-            GUILayout.Label($"Localization Patch v3.5.0 ({CurrentLanguage})", headerStyle);
+            GUILayout.Label($"Localization Patch v3.6.0 ({CurrentLanguage})", headerStyle);
             GUILayout.Space(5);
 
             GUILayout.BeginHorizontal();

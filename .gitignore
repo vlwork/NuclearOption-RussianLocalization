@@ -1,3 +1,29 @@
-bin/
-obj/
+# Build output and IDE state
+**/bin/
+**/obj/
+.vs/
+.vscode/
 *.user
+*.suo
+
+# Local recovery/decompiler tools
+.tools/
+.recovered/
+
+# Never commit game or compiled plugin binaries
+*.dll
+*.exe
+*.pdb
+*.mdb
+
+# Backups, generated diagnostics, and local BepInEx state
+*.bak
+*.backup
+*.old
+untranslated.txt
+extracted_gamedata.txt
+*.cfg
+
+# Generated releases
+release/.staging/
+release/*.zip

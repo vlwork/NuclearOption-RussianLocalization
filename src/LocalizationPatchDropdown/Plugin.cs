@@ -13,6 +13,7 @@ namespace LocalizationPatchDropdown
     // TMP_Text.text setter hook misses. Calls LocalizationPatch's Translate()
     // via reflection so we stay in sync with its dictionary.
     [BepInPlugin("com.noms.localizationpatch.dropdown", "LocalizationPatch Dropdown Addon", "1.0.0")]
+    [BepInDependency("com.noms.localizationpatch", BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;

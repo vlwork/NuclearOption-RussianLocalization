@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>LocalizationPatch</AssemblyName>
+    <RootNamespace>LocalizationPatch</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Version>3.6.0</Version>
+    <AssemblyVersion>3.6.0.0</AssemblyVersion>
+    <FileVersion>3.6.0.0</FileVersion>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <Description>Stable Nuclear Option JSON localization plugin for BepInEx 5</Description>
+    <GameManaged>$(NuclearOptionDir)\NuclearOption_Data\Managed</GameManaged>
+    <BepInExCore>$(NuclearOptionDir)\BepInEx\core</BepInExCore>
+  </PropertyGroup>
+
+  <Target Name="CheckGamePath" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(NuclearOptionDir)' == ''"
+           Text="NuclearOptionDir is required. Use scripts/build.ps1 or pass -p:NuclearOptionDir=&quot;&lt;game folder&gt;&quot;." />
+    <Error Condition="!Exists('$(GameManaged)')"
+           Text="Nuclear Option managed assemblies were not found at '$(GameManaged)'." />
+    <Error Condition="!Exists('$(BepInExCore)\BepInEx.dll')"
+           Text="BepInEx 5 was not found at '$(BepInExCore)'. Install BepInEx 5 and run the game once." />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="BepInEx" HintPath="$(BepInExCore)\BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExCore)\0Harmony.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(GameManaged)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(GameManaged)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(GameManaged)\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(GameManaged)\UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(GameManaged)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextCoreFontEngineModule" HintPath="$(GameManaged)\UnityEngine.TextCoreFontEngineModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(GameManaged)\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(GameManaged)\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(GameManaged)\Unity.TextMeshPro.dll" Private="false" />
+    <Reference Include="Assembly-CSharp" HintPath="$(GameManaged)\Assembly-CSharp.dll" Private="false" />
+  </ItemGroup>
+</Project>

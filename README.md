@@ -1,105 +1,58 @@
-# Nuclear Option — LocalizationPatch (source)
+# Nuclear Option Russian Localization
 
-Source code for the BepInEx plugins behind every Nuclear Option language patch published
-under this account:
+A standalone, maintainable BepInEx 5 localization mod for **Nuclear Option**. This repository contains the stable `LocalizationPatch` 3.6.0 source, the Russian translation data, the Cyrillic font, reproducible build/package scripts, and no game binaries.
 
-| Assembly | Source | Role |
-|---|---|---|
-| `LocalizationPatch.dll` | [`Plugin.cs`](Plugin.cs) | the translation plugin itself |
-| `LocalizationPatchDropdown.dll` | [`LocalizationPatchDropdown/`](LocalizationPatchDropdown) | optional addon; translates dropdown options, which the text-setter hook does not see |
+The runtime plugin is based on [9138noms/NuclearOption-LocalizationPatch](https://github.com/9138noms/NuclearOption-LocalizationPatch). Stable 3.6.0 behavior is intentionally preserved:
 
-The plugin itself contains **no translations**. It loads a `<lang>.json` file that sits
-next to it and substitutes text at runtime, so one binary serves all languages. Each
-language patch ships this same DLL plus its own JSON and font.
+- TMP text is translated before it visibly flashes in English;
+- both prefix and postfix hooks cover `OnEnable`;
+- a fast active-TMP pass supplements the slower safety sweep;
+- selective AutoFit changes only TMP text sizing;
+- parent `RectTransform` and layout containers are never resized or repositioned.
 
-## Language patches built on this plugin
+The experimental 3.6.1/3.6.2 binaries and the 3.6.2 cockpit hierarchy scanner are not used.
 
-| Language | Repository |
-|---|---|
-| Korean | [NuclearOption-KoreanPatch](https://github.com/9138noms/NuclearOption-KoreanPatch) |
-| Ukrainian | [NuclearOption-UkrainianPatch](https://github.com/9138noms/NuclearOption-UkrainianPatch) |
-| Russian | [NuclearOption-RussianPatch](https://github.com/9138noms/NuclearOption-RussianPatch) |
-| Belarusian | [NuclearOption-BelarusianPatch](https://github.com/9138noms/NuclearOption-BelarusianPatch) |
-| German | [NuclearOption-GermanPatch](https://github.com/9138noms/NuclearOption-GermanPatch) |
-| French | [NuclearOption-FrenchPatch](https://github.com/9138noms/NuclearOption-FrenchPatch) |
-| Spanish | [NuclearOption-SpanishPatch](https://github.com/9138noms/NuclearOption-SpanishPatch) |
-| Italian | [NuclearOption-ItalianPatch](https://github.com/9138noms/NuclearOption-ItalianPatch) |
-| Portuguese (BR) | [NuclearOption-PortuguesePatch](https://github.com/9138noms/NuclearOption-PortuguesePatch) |
-| Turkish | [NuclearOption-TurkishPatch](https://github.com/9138noms/NuclearOption-TurkishPatch) |
-| Chinese (Traditional) | [NuclearOption-TraditionalChinesePatch](https://github.com/9138noms/NuclearOption-TraditionalChinesePatch) |
-| Norwegian | [NuclearOption-NorwegianPatch](https://github.com/9138noms/NuclearOption-NorwegianPatch) |
+## Repository layout
 
-Want a language that isn't listed? See the
-[Translation Toolkit](https://github.com/9138noms/NuclearOption-TranslationToolkit) —
-no programming required.
+- `src/LocalizationPatch` — main BepInEx plugin (`com.noms.localizationpatch`)
+- `src/LocalizationPatchDropdown` — dropdown translation addon
+- `localization/ru.json` — canonical Russian translation, exactly 3,716 entries
+- `fonts/Tektur-Reg.ttf` — Cyrillic fallback font
+- `scripts` — build, package, and local installation scripts
+- `release` — generated GitHub Release ZIP location
 
-## Building
+## Build
 
-Requires the .NET SDK (any version that can target `net472`), a copy of Nuclear Option,
-and BepInEx 5 installed into the game folder. The project references the game's own
-assemblies, so they are never redistributed here.
+Requirements: Windows PowerShell 5.1+, a .NET SDK capable of targeting `net472`, Nuclear Option, and BepInEx 5 installed in the game directory.
 
-```
-dotnet build -c Release
+```powershell
+.\scripts\build.ps1
 ```
 
-If the game is not at the default Steam path:
+If local execution policy blocks scripts, run `powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1`.
 
+The script searches Steam libraries automatically. An explicit path can be supplied:
+
+```powershell
+.\scripts\build.ps1 -GameDir 'G:\SteamLibrary\steamapps\common\Nuclear Option'
 ```
-dotnet build -c Release -p:NuclearOptionDir="D:\Games\Nuclear Option"
+
+All game references flow through the MSBuild `NuclearOptionDir` property. Game DLLs are never copied into the repository or release.
+
+## Package
+
+```powershell
+.\scripts\package.ps1 -Version 3.6.0
 ```
 
-Output lands in `bin/Release/net472/LocalizationPatch.dll`. The dropdown addon builds the
-same way from `LocalizationPatchDropdown/`.
+This creates `release/NuclearOption-RussianLocalization-v3.6.0.zip` with the ready-to-install `BepInEx/plugins/LocalizationPatch` layout. Packaging validates `ru.json`, protected English countermeasure/unit names and model designations, the active DLL count, and the absence of backups or experimental files.
 
-Builds are not byte-identical between machines — .NET writes a fresh module MVID on
-every compile and embeds source paths. To confirm a released DLL matches this source,
-compare the decompiled IL rather than file hashes.
+For player-facing installation and limitations, see [README_RU.md](README_RU.md).
 
-## How it works
+## Translation policy
 
-Two paths put translated text on screen:
+Vehicle, aircraft, weapon, and unit names remain in their original English spelling, including inside descriptions. `IR Flares` and `Radar Countermeasures` are protected identity translations. General menus, Encyclopedia content, and ordinary UI are translated through `ru.json`. The mod does not attempt to translate every cockpit/HUD/MFD element automatically.
 
-1. **Setter hooks** — Harmony patches on `TMP_Text.text`, `Text.text` and
-   `TextMeshProUGUI.OnEnable`. The `OnEnable` hook is what stops prefab-authored text
-   from flashing English when a panel opens.
-2. **Periodic sweep** — every `ScanInterval` seconds (default 0.3) the plugin walks
-   `Resources.FindObjectsOfTypeAll<TMP_Text>()` and translates anything the hooks did
-   not catch. Instance IDs of already-translated components are cached so the sweep
-   stays cheap.
+## Release policy
 
-Lookup is an exact, whole-string match after `Trim()`. A small set of patterns handles
-text that carries a runtime value — `Word (N)`, `Word [N]`, `NN. Name`, `LABEL: value`
-and a few others — so a label only needs one entry regardless of the number beside it.
-
-Non-Latin scripts need a font the game does not ship. The plugin registers the font
-file found next to it (alphabetically first `.ttf`/`.otf`), builds a TMP font asset from
-it, pre-populates the glyphs used by the translation file, and adds it to TMP's global
-fallback list.
-
-Strings the plugin could not match are collected and written to `untranslated.txt` in
-the plugin folder, which is how new translation work gets found after a game update.
-
-## Configuration
-
-`BepInEx/config/com.noms.localizationpatch.cfg`
-
-| Key | Default | Meaning |
-|---|---|---|
-| `Language` | `auto` | Language code. `auto` picks the single `<lang>.json` in the folder. |
-| `ScanInterval` | `0.3` | Seconds between full text sweeps. Raise it if the sweep costs too much CPU. |
-
-## Hotkeys
-
-| Key | Action |
-|---|---|
-| `F10` | Toggle the debug overlay |
-| `Ctrl+F10` | Reload the translation JSON without restarting |
-| `Ctrl+F11` | Dump game strings for translation work |
-
-## License
-
-No obfuscation is used anywhere in this project, and nothing here talks to the network,
-starts processes, or touches anything outside the game's own folder.
-
-Reuse and adaptation for Nuclear Option mods is welcome; please credit the original.
+The repository is prepared for a GitHub Release, but scripts do not publish, upload, create a GitHub release, or create a Steam Workshop item.
