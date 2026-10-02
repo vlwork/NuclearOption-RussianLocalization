@@ -107,6 +107,9 @@ function Test-RussianTranslation {
         $data['Radar Countermeasures'] -cne 'Radar Countermeasures') {
         throw 'ru.json["Radar Countermeasures"] must equal "Radar Countermeasures".'
     }
+    if (-not $data.ContainsKey('Continue') -or $data['Continue'] -cne 'Continue') {
+        throw 'ru.json["Continue"] must equal "Continue".'
+    }
 
     $identityNames = @(
         'AFV6 AA', 'AFV6 APC', 'AFV6 AT', 'AFV6 IFV',
