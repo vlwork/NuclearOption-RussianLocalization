@@ -1,0 +1,61 @@
+{
+  "baselineSha256": "70A2F55DB890BA5F3D195BCA6CD511526AB13E9A06D3DFBA23722897B2E8F018",
+  "baselineEntryCount": 3716,
+  "reviewedMission": "13. Reprisal",
+  "resourcesSha256": "88CB99EA168DE540FA1406AC6D12942BD3CAC634597616E8E5EB057C95205D7D",
+  "assemblySha256": "EB3B93BDAEC37DD7B3BAB72F801A2C84E5BE2AE3C559F39251E2320AE6B11CCC",
+  "translations": [
+    {
+      "source": "Enemy tanks cresting the ridge to the south!",
+      "russian": "Танки противника выходят на гребень хребта к югу!"
+    },
+    {
+      "source": "Enemy tanks, south east, 3 kilometers out!",
+      "russian": "Танки противника на юго-востоке, в 3 километрах!"
+    },
+    {
+      "source": "Enemy tanks to the east, 5 kilometers out!",
+      "russian": "Танки противника к востоку, в 5 километрах!"
+    },
+    {
+      "source": "Enemy tanks to the north east!",
+      "russian": "Танки противника на северо-востоке!"
+    },
+    {
+      "source": "They've got tanks approaching on all sides. We're going to pull out before we become encircled.",
+      "russian": "Танки противника подходят со всех сторон. Отходим, пока нас не окружили."
+    },
+    {
+      "source": "A large enemy force is preparing to seize this airport, approaching via K92. You are to support K92's defenders as they perform a fighting retreat, and attrit as many enemy vehicles as possible.",
+      "russian": "К этому аэропорту через K92 приближаются крупные силы противника, готовящиеся его захватить. Поддержите защитников K92, отходящих с боем, и выведите из строя как можно больше вражеской техники."
+    },
+    {
+      "source": "Enemy troop transports spotted on the highway to the south.",
+      "russian": "На шоссе к югу замечен транспорт противника для перевозки войск."
+    },
+    {
+      "source": "The enemy is now past K92. They're pushing straight through to the airport. Do not let them reach it!",
+      "russian": "Противник прошёл K92 и наступает прямо на аэропорт. Не дайте ему добраться до него!"
+    },
+    {
+      "source": "Be advised, PALA is attempting to set up SAM sites in the southern hills overlooking Maris Airport. Find and destroy them before they lock down the airspace!",
+      "russian": "Внимание: PALA пытается развернуть ЗРК на южных холмах над Maris Airport. Найдите и уничтожьте их, пока они не перекрыли воздушное пространство!"
+    },
+    {
+      "source": "Excellent work, enemy anti-air launchers are destroyed.",
+      "russian": "Отличная работа: вражеские пусковые установки ЗРК уничтожены."
+    },
+    {
+      "source": "PALA's forces are completely routed. Congratulations, you've managed to turn an imminent defeat into a decisive victory.",
+      "russian": "Силы PALA полностью обращены в бегство. Поздравляем: вы превратили надвигавшееся поражение в решительную победу."
+    },
+    {
+      "source": "The last of us are pulling out now.",
+      "russian": "Сейчас отходят последние наши подразделения."
+    },
+    {
+      "source": "PALA losses are heavy. Units are retreating.",
+      "russian": "PALA несёт тяжёлые потери. Подразделения отступают."
+    }
+  ]
+}

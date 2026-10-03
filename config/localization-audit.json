@@ -1,5 +1,5 @@
 {
-  "expectedEntryCount": 3716,
+  "expectedEntryCount": 3729,
   "protectedIdentities": ["IR Flares", "Radar Countermeasures", "Continue", "M12 Jackknife"],
   "designationPattern": "(?<![A-Za-z0-9_/])(?:[A-Z][A-Z0-9/]*(?:-[A-Z0-9]+)+|[A-Z]{1,5}[0-9]+[A-Z0-9]*)(?![A-Za-z0-9_/])",
   "designationExclusions": {

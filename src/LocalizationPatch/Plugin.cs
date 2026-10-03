@@ -15,7 +15,7 @@ using UnityEngine.TextCore.LowLevel;
 
 namespace KoreanPatch
 {
-    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.6.3")]
+    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.6.4")]
     public class Plugin : BaseUnityPlugin
     {
         private sealed class AutoFitState
@@ -39,6 +39,24 @@ namespace KoreanPatch
         // Translation data
         internal static Dictionary<string, string> Translations = new Dictionary<string, string>();
         internal static HashSet<string> TranslationKeys = new HashSet<string>();
+        // Reviewed literal ShowMessage outcomes only / только проверенные сообщения миссии.
+        // Keep this exact allowlist in sync with config/mission-messages.json; no chat or hints.
+        private static readonly HashSet<string> ReviewedMissionMessages = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "Enemy tanks cresting the ridge to the south!",
+            "Enemy tanks, south east, 3 kilometers out!",
+            "Enemy tanks to the east, 5 kilometers out!",
+            "Enemy tanks to the north east!",
+            "They've got tanks approaching on all sides. We're going to pull out before we become encircled.",
+            "A large enemy force is preparing to seize this airport, approaching via K92. You are to support K92's defenders as they perform a fighting retreat, and attrit as many enemy vehicles as possible.",
+            "Enemy troop transports spotted on the highway to the south.",
+            "The enemy is now past K92. They're pushing straight through to the airport. Do not let them reach it!",
+            "Be advised, PALA is attempting to set up SAM sites in the southern hills overlooking Maris Airport. Find and destroy them before they lock down the airspace!",
+            "Excellent work, enemy anti-air launchers are destroyed.",
+            "PALA's forces are completely routed. Congratulations, you've managed to turn an imminent defeat into a decisive victory.",
+            "The last of us are pulling out now.",
+            "PALA losses are heavy. Units are retreating."
+        };
         internal static bool FontReady = false;
         internal static bool Enabled = true;
 
@@ -174,7 +192,7 @@ namespace KoreanPatch
             // Also register scene load callback as additional safety net
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Log.LogInfo($"Localization Patch v3.6.3 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
+            Log.LogInfo($"Localization Patch v3.6.4 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
         }
 
         /// <summary>
@@ -289,7 +307,36 @@ namespace KoreanPatch
                 catch (Exception e) { Log.LogWarning($"{tmpType.Name}.OnEnable patch failed: {e.Message}"); }
             }
 
+            if (PatchMissionMessageProducer()) applied++;
+
             Log.LogInfo($"Harmony: {applied} patches applied successfully");
+        }
+
+        private bool PatchMissionMessageProducer()
+        {
+            try
+            {
+                // The private local receiver is display-only. Never patch ShowMessage/RpcShowMessage:
+                // their original English argument is also serialized to other clients.
+                var targetMethod = typeof(MissionMessages).GetMethod("ShowMessgeLocal",
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly,
+                    null, new Type[] { typeof(string), typeof(bool), typeof(FactionHQ) }, null);
+                if (targetMethod == null || targetMethod.ReturnType != typeof(void))
+                {
+                    Log.LogWarning("MissionMessages.ShowMessgeLocal signature unavailable; mission producer localization skipped");
+                    return false;
+                }
+                var prefix = typeof(MissionMessages_Local_Patch).GetMethod("Prefix",
+                    BindingFlags.Static | BindingFlags.NonPublic);
+                HarmonyInstance.Patch(targetMethod, prefix: new HarmonyMethod(prefix));
+                Log.LogInfo("Patched: MissionMessages.ShowMessgeLocal — reviewed local display messages only");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning("Mission message producer patch failed: " + e.Message);
+                return false;
+            }
         }
 
         private void OnDestroy()
@@ -1450,6 +1497,16 @@ namespace KoreanPatch
                 missedCount++;
         }
 
+        internal static string TranslateMissionMessage(string message)
+        {
+            // Exact allowlist + exact dictionary lookup: unknown text and already-Russian values
+            // bypass UI patterns. Идентификаторы, имена игроков и чат сюда не направляются.
+            if (!Enabled || Instance == null || string.IsNullOrEmpty(message) ||
+                !ReviewedMissionMessages.Contains(message) || !TranslationKeys.Contains(message))
+                return message;
+            return Translate(message);
+        }
+
         internal static string Translate(string original)
         {
             if (!Enabled || string.IsNullOrEmpty(original)) return original;
@@ -1910,6 +1967,15 @@ namespace KoreanPatch
 
         #region Harmony Patches
 
+        static class MissionMessages_Local_Patch
+        {
+            // Harmony argument 0 is a local display-string copy; sound/faction arguments stay intact.
+            static void Prefix(ref string __0)
+            {
+                __0 = TranslateMissionMessage(__0);
+            }
+        }
+
         /// <summary>
         /// CRITICAL: Redirect FontEngine.LoadFontFace(Font, int) to use file path
         /// when the Font is our Korean proxy font. This makes CreateFontAsset and
@@ -2090,7 +2156,7 @@ namespace KoreanPatch
         private void DrawWindow(int id)
         {
             GUILayout.BeginVertical();
-            GUILayout.Label($"Localization Patch v3.6.3 ({CurrentLanguage})", headerStyle);
+            GUILayout.Label($"Localization Patch v3.6.4 ({CurrentLanguage})", headerStyle);
             GUILayout.Space(5);
 
             GUILayout.BeginHorizontal();

@@ -1,6 +1,6 @@
 # Nuclear Option Russian Localization
 
-A standalone, maintainable BepInEx 5 localization mod for **Nuclear Option**. This repository contains `LocalizationPatch` 3.6.3 source, the Russian translation data, the Cyrillic font, offline build/package scripts, and no game binaries. Version 3.6.3 preserves the stable 3.6.0 translation behavior and removes only unconditional keypress diagnostic logging; it requires an in-game user test.
+A standalone, maintainable BepInEx 5 localization mod for **Nuclear Option**. This repository contains `LocalizationPatch` 3.6.4 development-candidate source, the Russian translation data, the Cyrillic font, offline build/package scripts, and no game binaries. It preserves the 3.6.3 stabilization and adds producer-scoped localization of 13 reviewed mission messages before feed composition. Join/leave notices and chat are not intercepted; in-game host/client testing is required.
 
 The runtime plugin is based on [9138noms/NuclearOption-LocalizationPatch](https://github.com/9138noms/NuclearOption-LocalizationPatch). Stable 3.6.0 behavior is intentionally preserved:
 
@@ -16,7 +16,7 @@ The experimental 3.6.1/3.6.2 binaries and the 3.6.2 cockpit hierarchy scanner ar
 
 - `src/LocalizationPatch` — main BepInEx plugin (`com.noms.localizationpatch`)
 - `src/LocalizationPatchDropdown` — dropdown translation addon
-- `localization/ru.json` — canonical Russian translation, exactly 3,716 entries
+- `localization/ru.json` — canonical Russian translation, exactly 3,729 entries
 - `fonts/Tektur-Reg.ttf` — Cyrillic fallback font
 - `scripts` — build, package, and local installation scripts
 - `release` — generated GitHub Release ZIP location
@@ -42,10 +42,10 @@ All game references flow through the MSBuild `NuclearOptionDir` property. Game D
 ## Package
 
 ```powershell
-.\scripts\package.ps1 -Version 3.6.3
+.\scripts\package.ps1 -Version 3.6.4
 ```
 
-This creates `release/NuclearOption-RussianLocalization-v3.6.3.zip` with the `BepInEx/plugins/LocalizationPatch` layout. Packaging runs the same strict QA as the build, checks the source/DLL version, and validates exactly four archive entries (two plugin DLLs, `ru.json`, and Tektur), including their hashes. Previous local packages are retained under ignored `.verification/previous-packages` rather than deleted.
+This creates `release/NuclearOption-RussianLocalization-v3.6.4.zip` with the `BepInEx/plugins/LocalizationPatch` layout. Packaging runs the same strict QA as the build, checks the source/DLL version, and validates exactly four archive entries (two plugin DLLs, `ru.json`, and Tektur), including their hashes. Previous local packages are retained under ignored `.verification/previous-packages` rather than deleted.
 
 For isolated verification, pass a repository-local absolute path to `build.ps1 -OutputRoot`, then use that same path with `package.ps1 -SkipBuild -BuildRoot` and a repository-local `-OutputDirectory`.
 

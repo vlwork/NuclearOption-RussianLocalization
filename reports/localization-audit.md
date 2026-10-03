@@ -6,7 +6,7 @@ Deterministic offline report. Localization/package inputs are read-only. Review 
 
 | Metric | Count |
 |---|---:|
-| EntryCount | 3716 |
+| EntryCount | 3729 |
 | DuplicateExactKeys | 0 |
 | ProtectedIdentityViolations | 0 |
 | TrimUnsafeKeys | 112 |
