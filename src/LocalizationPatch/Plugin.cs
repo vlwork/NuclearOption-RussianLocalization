@@ -15,7 +15,7 @@ using UnityEngine.TextCore.LowLevel;
 
 namespace KoreanPatch
 {
-    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.6.0")]
+    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.6.3")]
     public class Plugin : BaseUnityPlugin
     {
         private sealed class AutoFitState
@@ -174,7 +174,7 @@ namespace KoreanPatch
             // Also register scene load callback as additional safety net
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Log.LogInfo($"Localization Patch v3.6.0 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
+            Log.LogInfo($"Localization Patch v3.6.3 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
         }
 
         /// <summary>
@@ -2090,7 +2090,7 @@ namespace KoreanPatch
         private void DrawWindow(int id)
         {
             GUILayout.BeginVertical();
-            GUILayout.Label($"Localization Patch v3.6.0 ({CurrentLanguage})", headerStyle);
+            GUILayout.Label($"Localization Patch v3.6.3 ({CurrentLanguage})", headerStyle);
             GUILayout.Space(5);
 
             GUILayout.BeginHorizontal();
@@ -2146,12 +2146,6 @@ namespace KoreanPatch
                 logged = true;
                 Plugin.Log?.LogInfo($"FrameHelper.Update() running (frame {Time.frameCount})");
             }
-
-            // Debug: log any function key press to verify input system works
-            if (Input.GetKeyDown(KeyCode.F9)) Plugin.Log?.LogInfo("[DEBUG] F9 detected");
-            if (Input.GetKeyDown(KeyCode.F10)) Plugin.Log?.LogInfo("[DEBUG] F10 detected");
-            if (Input.GetKeyDown(KeyCode.F12)) Plugin.Log?.LogInfo("[DEBUG] F12 detected");
-            if (Input.anyKeyDown) Plugin.Log?.LogInfo($"[DEBUG] Any key: {Input.inputString}");
 
             Plugin.Instance?.DoPerFrameLogic();
         }

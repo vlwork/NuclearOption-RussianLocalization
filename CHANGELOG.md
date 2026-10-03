@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.6.3 — 2026-10-03
+
+- Normalized only 16 reviewed boundary-whitespace keys; preserved their values, all 3,716 entries, and all four trim collision groups.
+- Corrected 23 reviewed values: restored `T9K41 Boltstrike`, clarified loadout/AAA/naval/launcher terminology, and corrected ordinary Encyclopedia unit typography. Ambiguous and deferred editor/mission/avionics findings remain.
+- Removed unconditional FrameHelper keypress diagnostics only; preserved 3.6.0 translation timing, shortcuts, OnEnable hooks and selective text-only AutoFit.
+- Added shared deterministic offline localization QA and regression tests; refreshed the remaining 112-key trim analysis.
+- Made build/package verification offline and repository-isolated; validate the exact four-file production archive and source/DLL version.
+- Moved installer backups outside all BepInEx, identify duplicates by assembly metadata, preserve user files, and support `-WhatIf`; verified only against repository-local mock games.
+- No publication or real-game installation performed; in-game user testing remains required.
+
 ## 3.6.0 — 2026-08-26
 
 - Restored the verified stable LocalizationPatch 3.6.0 implementation from the installed known-good DLL and upstream source.

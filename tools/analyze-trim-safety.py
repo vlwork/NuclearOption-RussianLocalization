@@ -140,8 +140,10 @@ def main() -> int:
         normalized: sorted(set(members), key=lambda value: value.encode("utf-8"))
         for normalized, members in normalized_groups.items() if len(set(members)) > 1
     }
-    if len(unsafe_keys) != 128:
-        raise RuntimeError(f"Expected 128 trim-unsafe keys; found {len(unsafe_keys)}")
+    normalized_allowlist = all(key not in data and key.strip() in data for key in SAFE_RAW_KEYS)
+    expected_unsafe = 112 if normalized_allowlist else 128
+    if len(unsafe_keys) != expected_unsafe:
+        raise RuntimeError(f"Expected reviewed state {expected_unsafe} trim-unsafe keys; found {len(unsafe_keys)}")
     if len(collisions) != 4:
         raise RuntimeError(f"Expected 4 trim-normalized collisions; found {len(collisions)}")
 
@@ -161,7 +163,7 @@ def main() -> int:
         identical = trimmed_exists and data[trimmed] == data[key]
         if identical:
             classification = "REDUNDANT_OR_DEAD"
-            reason = "The reachable trimmed key already exists with the same value; the padded key cannot be queried directly."
+            reason = "The ordinary exact lookup uses the identical trimmed entry. A padded pattern sub-probe is theoretically possible but yields the same value."
         elif key in SAFE_RAW_KEYS:
             classification = "SAFE_TO_NORMALIZE"
             reason = "Collision-free, syntactically complete string with only ordinary U+0020 boundary padding and no target overwrite."
@@ -175,7 +177,7 @@ def main() -> int:
         })
 
     grouped = {name: [item for item in items if item["classification"] == name] for name in ("SAFE_TO_NORMALIZE", "REQUIRES_MANUAL_DECISION", "REDUNDANT_OR_DEAD")}
-    expected_counts = {"SAFE_TO_NORMALIZE": 16, "REQUIRES_MANUAL_DECISION": 110, "REDUNDANT_OR_DEAD": 2}
+    expected_counts = {"SAFE_TO_NORMALIZE": 0 if normalized_allowlist else 16, "REQUIRES_MANUAL_DECISION": 110, "REDUNDANT_OR_DEAD": 2}
     actual_counts = {name: len(group) for name, group in grouped.items()}
     if actual_counts != expected_counts:
         raise RuntimeError(f"Classification count changed: {actual_counts}")
@@ -192,7 +194,7 @@ def main() -> int:
         "patterns": find_line(source_lines, "private static string TryPatternMatch(string text)"),
     }
 
-    provenance_files = sorted(path.relative_to(repo).as_posix() for path in repo.rglob("*") if path.is_file() and re.match(r"(?i)^(extracted_gamedata|untranslated).*\.txt$", path.name))
+    provenance_files = sorted(path.relative_to(repo).as_posix() for path in repo.rglob("*") if ".verification" not in path.parts and path.is_file() and re.match(r"(?i)^(extracted_gamedata|untranslated).*\.txt$", path.name))
     audit_note = "No generated audit report was supplied."
     if args.audit_report and args.audit_report.is_file():
         audit_text = args.audit_report.read_text(encoding="utf-8-sig")
@@ -212,7 +214,7 @@ def main() -> int:
         f"| SAFE_TO_NORMALIZE | {len(grouped['SAFE_TO_NORMALIZE'])} |",
         f"| REQUIRES_MANUAL_DECISION | {len(grouped['REQUIRES_MANUAL_DECISION'])} |",
         f"| REDUNDANT_OR_DEAD | {len(grouped['REDUNDANT_OR_DEAD'])} |", "",
-        "The three groups are mutually exclusive and cover all 128 trim-unsafe keys. Collision classification describes the collision as a whole; per-key disposition remains conservative.", "",
+        f"The three groups cover all {len(items)} remaining trim-unsafe keys. Baseline: 128 unsafe, 16 safe, 110 manual, 2 redundant. Only the 16 reviewed collision-free keys were renamed; their values were preserved. Collision classification describes equivalent data, not universal runtime deadness.", "",
         "### Whitespace profile", "", "| Property | Count |", "|---|---:|",
     ]
     for flag_name in ("leading spaces", "trailing spaces", "leading newline", "trailing newline", "tabs", "multiple whitespace kinds"):
@@ -226,14 +228,14 @@ def main() -> int:
         values = "<br>".join(raw_json(member) + " → " + md(data[member]) for member in members)
         lines.append(f"| {raw_json(normalized)} | {collision_class} | {raw_members} | {values} | {md(conclusion)} |")
 
-    lines.extend(["", "## ALL 128 TRIM-UNSAFE KEYS", ""] + table_header())
+    lines.extend(["", f"## ALL {len(items)} TRIM-UNSAFE KEYS", ""] + table_header())
     for index, item in enumerate(items, 1):
         lines.append(table_row(index, item))
 
     section_titles = [
         ("SAFE CANDIDATES", "SAFE_TO_NORMALIZE", "These are classification candidates only. Each is collision-free, has no existing trimmed key, and contains only ordinary boundary spaces around a syntactically complete string."),
         ("MANUAL REVIEW", "REQUIRES_MANUAL_DECISION", "These entries are collision-involved, formatting-sensitive, or likely dynamic/log fragments. Static evidence is not strong enough for an automatic rename."),
-        ("DEAD/REDUNDANT", "REDUNDANT_OR_DEAD", "The exact trimmed key already exists with the same translation, while all runtime lookup inputs are trimmed before dictionary access."),
+        ("DEAD/REDUNDANT", "REDUNDANT_OR_DEAD", "The exact trimmed key already exists with the same translation. The padded entries are redundant for ordinary exact lookup; retain them because pattern sub-probes can carry whitespace."),
     ]
     for heading, classification, explanation in section_titles:
         lines.extend(["", f"## {heading}", "", explanation, ""] + table_header())
@@ -246,19 +248,19 @@ def main() -> int:
         f"- `TranslateTmpComponent` begins at line {runtime_lines['tmp']}. It computes `current.Trim()` at line {runtime_lines['tmp_trim']} and uses only that value for exact lookup, cache revalidation, pattern matching, and untranslated recording.",
         f"- The legacy `UnityEngine.UI.Text` sweep starts at line {runtime_lines['legacy']} and likewise trims `txt.text` before exact or pattern lookup.",
         f"- `Translate` begins at line {runtime_lines['translate']} and trims `original` at line {runtime_lines['translate_trim']}. TMP and legacy setter patches route through this method.",
-        f"- `TryPatternMatch` begins at line {runtime_lines['patterns']}. It receives the already-trimmed outer string. Its dictionary probes use delimiter-stripped prefixes, mission names, dash segments, unit names, or a `TrimEnd()` label; none reconstructs leading/trailing whitespace.",
-        "- Consequently, a dictionary key containing leading or trailing whitespace cannot be looked up directly by the current runtime. The original boundary whitespace is also not re-applied when a translation is assigned.",
-        "- This proves present-day unreachability, but it does not prove that every key is safe to normalize: many entries look like fragments concatenated with runtime values, and normalization alone may still not make those whole dynamic strings match.",
+        f"- `TryPatternMatch` begins at line {runtime_lines['patterns']}. Its outer input is trimmed, but some derived substrings are NOT: bracket prefixes, numbered mission names, dash segments and faction-unit names. For example `Already loaded  (1)` probes `Already loaded `; `01.  Turret under pilot control` can probe a leading-space key. These are static theoretical examples, not observed game evidence.",
+        "- Leading/trailing whitespace keys cannot be reached by ordinary whole-string exact lookup. It would be incorrect to assert universal deadness across all pattern paths. Original boundary whitespace is not reapplied by exact translation.",
+        "- The 16 allowlisted, complete boundary-space labels were normalized only as explicitly authorized. Remaining dynamic/diagnostic fragments and every collision are retained; no blanket trim or deduplication was applied.",
         "", "## SOURCE PROVENANCE", "",
         f"- `extracted_gamedata.txt` / `untranslated*.txt` files found in the named repository: {', '.join(f'`{item}`' for item in provenance_files) if provenance_files else 'none'}.",
         f"- {audit_note}",
         "- With no extracted source snapshot, classifications rely on exact dictionary contents, collision/value equality, lexical completeness, and the inspected runtime lookup code. Dynamic/log-fragment entries remain manual by design.",
         "", "## METHODOLOGY AND SAFETY", "",
-        "- `str.strip()` is used here to mirror the observed boundary characters and produces the same 128/4 counts as the PowerShell/.NET audit for this dataset.",
+        "- `str.strip()` mirrors the observed boundary characters in this dataset. General QA uses an explicit .NET Char.IsWhiteSpace set. Baseline was 128/4; the reviewed post-correction state is 112/4.",
         "- No key, translation, plugin source, DLL, or release archive is written by this tool.",
         "- The allowlist for SAFE_TO_NORMALIZE is intentionally narrow and asserted by count; new or changed data causes generation to fail for re-review.",
-        "- This report is evidence for a later corrective decision, not authorization to mutate the localization file.", "",
-        f"Localization SHA-256 at analysis time: `{sha256(localization_path)}`  ",
+        "- This report documents current remaining findings, not authorization for further localization changes.", "",
+        f"Localization SHA-256 at analysis time: `{sha256(localization_path)}`<br>",
         f"Plugin source SHA-256 at analysis time: `{sha256(plugin_path)}`",
     ])
 

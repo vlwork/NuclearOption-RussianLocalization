@@ -1,0 +1,31 @@
+{
+  "expectedEntryCount": 3716,
+  "protectedIdentities": ["IR Flares", "Radar Countermeasures", "Continue", "M12 Jackknife"],
+  "designationPattern": "(?<![A-Za-z0-9_/])(?:[A-Z][A-Z0-9/]*(?:-[A-Z0-9]+)+|[A-Z]{1,5}[0-9]+[A-Z0-9]*)(?![A-Za-z0-9_/])",
+  "designationExclusions": {
+    "A2A": "Air-to-air mode abbreviation, not a vehicle/model designation; deferred avionics label.",
+    "A2G": "Air-to-ground mode abbreviation, not a vehicle/model designation; deferred avionics label.",
+    "NON-NUCLEAR": "Ordinary adjective, not a model code.",
+    "ANTI-GRAV": "Ordinary label, not a model code.",
+    "A9": "Hexadecimal example in a byte-count diagnostic.",
+    "M0": "Mission variable identifier in a deferred editor diagnostic.",
+    "M1": "Mission variable identifier in a deferred editor diagnostic.",
+    "F9": "Function-key label; this key may be localized as a key name."
+  },
+  "properNames": [
+    {"name": "Cricket"}, {"name": "Brawler"}, {"name": "Ibis"},
+    {"name": "Chicane"}, {"name": "Revoker"},
+    {"name": "Vortex", "excludeSourcePatterns": ["(?i)\\bvortex ring state\\b"]},
+    {"name": "Tarantula"}, {"name": "Ifrit"}, {"name": "Medusa"},
+    {"name": "Darkreach"}, {"name": "Compass"}, {"name": "Alkyon"},
+    {"name": "Anvil"}, {"name": "Jackknife"}, {"name": "Hexhound"},
+    {"name": "Stratolance"}, {"name": "StratoLance"}, {"name": "Dynamo"},
+    {"name": "Shard"}, {"name": "Hyperion"}, {"name": "Argus"},
+    {"name": "Annex"}, {"name": "Cursor"}, {"name": "Surf"}, {"name": "Linebreaker"},
+    {"name": "Boltstrike"}
+  ],
+  "pseudoLabels": ["<no filter>", "<select a mission>"],
+  "tmpTags": ["align", "allcaps", "alpha", "b", "br", "color", "cspace", "font", "font-weight", "gradient", "i", "indent", "line-height", "line-indent", "link", "lowercase", "margin", "mark", "material", "mspace", "nobr", "noparse", "page", "pos", "rotate", "s", "size", "smallcaps", "space", "sprite", "style", "sub", "sup", "u", "uppercase", "voffset", "width"],
+  "dynamicPatterns": ["^R[1234m]$", "^AFTERBURNER\\s+\\d+(?:[.,]\\d+)?%$", "^CAPACITOR\\s+\\d+(?:[.,]\\d+)?%?$", "^\\d{3,5}[x×]\\d{3,5}$", "^(?:ALT|SPD|IAS|TAS|MACH|RPM|FUEL|TIME|DIST|RANGE)\\s*[:=]?\\s*-?\\d+(?:[.,]\\d+)?(?:\\s*[A-Za-z/%]+)?$"],
+  "qualityCandidates": ["1 FORWARD BAY", "3 HEATER BAYS", "23mm AAA Emplacement", "Dynamo Class Destroyer", "FGA-57 Anvil", "M12 Jackknife", "MSV R9 Stratolance Launcher", "Forward Bay", "Rear Bay", "Heater Bays"]
+}

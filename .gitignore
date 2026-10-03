@@ -27,3 +27,7 @@ extracted_gamedata.txt
 # Generated releases
 release/.staging/
 release/*.zip
+
+# Repository-local stabilization checkpoints and mock installations
+.verification/
+**/__pycache__/

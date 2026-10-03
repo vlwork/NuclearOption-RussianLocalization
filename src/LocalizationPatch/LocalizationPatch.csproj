@@ -4,9 +4,9 @@
     <AssemblyName>LocalizationPatch</AssemblyName>
     <RootNamespace>LocalizationPatch</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>3.6.0</Version>
-    <AssemblyVersion>3.6.0.0</AssemblyVersion>
-    <FileVersion>3.6.0.0</FileVersion>
+    <Version>3.6.3</Version>
+    <AssemblyVersion>3.6.3.0</AssemblyVersion>
+    <FileVersion>3.6.3.0</FileVersion>
     <Nullable>disable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>

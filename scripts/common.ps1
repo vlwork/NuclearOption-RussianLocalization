@@ -82,73 +82,53 @@ function Resolve-NuclearOptionGameDir {
 function Test-RussianTranslation {
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        throw "Translation file not found: '$Path'."
-    }
+    $root = Split-Path $PSScriptRoot -Parent
+    $result = @(& python -X utf8 (Join-Path $root 'tools\audit-localization.py') --check-only --strict --localization $Path)
+    if ($LASTEXITCODE -ne 0) { throw "Objective localization QA failed: $($result -join ' ')" }
+    $audit = ($result -join '') | ConvertFrom-Json
+    return [int]$audit.metrics.EntryCount
+}
 
-    Add-Type -AssemblyName System.Web.Extensions
-    $serializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
-    $serializer.MaxJsonLength = [int]::MaxValue
-    try {
-        $json = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8)
-        $data = $serializer.DeserializeObject($json)
-    } catch {
-        throw "Invalid JSON in '$Path': $($_.Exception.Message)"
-    }
+function Get-LocalizationReleaseVersion {
+    $root = Split-Path $PSScriptRoot -Parent
+    $source = [IO.File]::ReadAllText((Join-Path $root 'src\LocalizationPatch\Plugin.cs'))
+    $match = [regex]::Match($source, 'BepInPlugin\("com\.noms\.localizationpatch", "Localization Patch", "(\d+\.\d+\.\d+)"\)')
+    if (-not $match.Success) { throw 'Runtime version was not found.' }
+    return $match.Groups[1].Value
+}
 
-    if ($null -eq $data -or $data.Count -ne 3716) {
-        $actual = if ($null -eq $data) { 0 } else { $data.Count }
-        throw "ru.json must contain exactly 3716 entries; found $actual."
-    }
-    if (-not $data.ContainsKey('IR Flares') -or $data['IR Flares'] -cne 'IR Flares') {
-        throw 'ru.json["IR Flares"] must equal "IR Flares".'
-    }
-    if (-not $data.ContainsKey('Radar Countermeasures') -or
-        $data['Radar Countermeasures'] -cne 'Radar Countermeasures') {
-        throw 'ru.json["Radar Countermeasures"] must equal "Radar Countermeasures".'
-    }
-    if (-not $data.ContainsKey('Continue') -or $data['Continue'] -cne 'Continue') {
-        throw 'ru.json["Continue"] must equal "Continue".'
-    }
-
-    $identityNames = @(
-        'AFV6 AA', 'AFV6 APC', 'AFV6 AT', 'AFV6 IFV',
-        'AFV8 APC', 'AFV8 IFV', 'AFV8 Mobile Air Defense',
-        'ALND-4 (20kt)', 'Annex Class Carrier', 'Argus Class Frigate',
-        'AT-145 Emplacement', 'Cursor Class LFD', 'Dynamo Class Destroyer',
-        'FGA-57 Anvil', 'GBM-500LR', 'GPO-N (1.5kt)', 'GS25',
-        'HGR-H', 'HGR-M', 'Hexhound GMG', 'Hexhound SAM',
-        'HLT Mobile Artillery', 'HLT Munitions Truck', 'HLT Radar Truck',
-        'HLT-CRAM', 'HLT-HEL', 'Hyperion Class Carrier',
-        'IRM-S1 Emplacement', 'IRM-S2',
-        'LCV25', 'LCV25 AA', 'LCV25 AT', 'LCV25 Cannon', 'LCV25 SAM',
-        'LCV45', 'LCV45 Recon Truck',
-        'Linebreaker APC', 'Linebreaker IFV', 'Linebreaker SAM',
-        'MSV Ballistic Missile Launcher', 'MSV Nuclear Ballistic Missile Launcher',
-        'MSV R9 Stratolance Launcher', 'MSV Radar', 'NL-98',
-        'OTB-31 landing craft', 'Shard Class Corvette',
-        'StratoLance R9 Launcher', 'Surf Class Patrol Boat'
+function Get-ProductionFiles {
+    param([string]$BuildRoot)
+    $root = Split-Path $PSScriptRoot -Parent
+    if (-not $BuildRoot) { $BuildRoot = $root }
+    $files = @(
+        [pscustomobject]@{ Name = 'LocalizationPatch.dll'; Path = Join-Path $BuildRoot 'src\LocalizationPatch\bin\Release\net472\LocalizationPatch.dll' },
+        [pscustomobject]@{ Name = 'LocalizationPatchDropdown.dll'; Path = Join-Path $BuildRoot 'src\LocalizationPatchDropdown\bin\Release\net472\LocalizationPatchDropdown.dll' },
+        [pscustomobject]@{ Name = 'ru.json'; Path = Join-Path $root 'localization\ru.json' },
+        [pscustomobject]@{ Name = 'Tektur-Reg.ttf'; Path = Join-Path $root 'fonts\Tektur-Reg.ttf' }
     )
-    foreach ($name in $identityNames) {
-        if (-not $data.ContainsKey($name) -or $data[$name] -cne $name) {
-            throw "Unit/vehicle name must remain in English: '$name'."
-        }
+    foreach ($file in $files) {
+        if (-not (Test-Path -LiteralPath $file.Path -PathType Leaf)) { throw "Production input missing: $($file.Path)" }
     }
+    $version = Get-LocalizationReleaseVersion
+    $dllVersion = (Get-Item -LiteralPath $files[0].Path).VersionInfo.FileVersion
+    if ($dllVersion -ne "$version.0") { throw "Main DLL version $dllVersion does not match source $version." }
+    return $files
+}
 
-    # Model designations present in an English source string must survive verbatim inside the
-    # Russian value. The two excluded all-caps labels are ordinary UI terms, not designations.
-    $designationPattern = '\b(?:[A-Z]{2,}[A-Z0-9]*(?:-[A-Z0-9]+)+|[A-Z]{2,}\d+[A-Z0-9-]*)\b'
-    foreach ($pair in $data.GetEnumerator()) {
-        foreach ($match in [regex]::Matches([string]$pair.Key, $designationPattern)) {
-            $designation = $match.Value
-            if ($designation -in @('NON-NUCLEAR', 'ANTI-GRAV')) { continue }
-            if (-not ([string]$pair.Value).Contains($designation)) {
-                throw "Designation '$designation' was not preserved in translation key '$($pair.Key)'."
+function Assert-NoReparsePoint {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $itemPath = [IO.Path]::GetFullPath($Path)
+    while ($itemPath) {
+        if (Test-Path -LiteralPath $itemPath) {
+            if ((Get-Item -LiteralPath $itemPath -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Refusing a reparse-point path: $itemPath"
             }
         }
+        $parent = Split-Path $itemPath -Parent
+        if ($parent -eq $itemPath) { break }
+        $itemPath = $parent
     }
-
-    return $data.Count
 }
 
 function Assert-PathUnderRoot {
