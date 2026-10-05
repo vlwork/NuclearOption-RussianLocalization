@@ -1,3 +1,7 @@
+// Derived from 9138noms/NuclearOption-LocalizationPatch.
+// Upstream permission and attribution: ../../THIRD_PARTY_NOTICES.md.
+// Repository-authored modifications do not relicense the inherited source.
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;

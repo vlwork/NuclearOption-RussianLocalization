@@ -1,3 +1,8 @@
+<!--
+  Derived from 9138noms/NuclearOption-LocalizationPatch.
+  Upstream permission and attribution are documented in ../../THIRD_PARTY_NOTICES.md.
+  Repository-authored modifications do not relicense the inherited source.
+-->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>

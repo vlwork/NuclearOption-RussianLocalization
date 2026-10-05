@@ -116,6 +116,22 @@ function Get-ProductionFiles {
     return $files
 }
 
+function Get-ReleaseDocumentationFiles {
+    $root = Split-Path $PSScriptRoot -Parent
+    $files = @(
+        [pscustomobject]@{ ArchivePath = 'LICENSE.md'; Path = Join-Path $root 'LICENSE.md' },
+        [pscustomobject]@{ ArchivePath = 'LICENSE-CODE'; Path = Join-Path $root 'LICENSE-CODE' },
+        [pscustomobject]@{ ArchivePath = 'LICENSE-TRANSLATION'; Path = Join-Path $root 'LICENSE-TRANSLATION' },
+        [pscustomobject]@{ ArchivePath = 'THIRD_PARTY_NOTICES.md'; Path = Join-Path $root 'THIRD_PARTY_NOTICES.md' },
+        [pscustomobject]@{ ArchivePath = 'third_party/OFL-1.1.txt'; Path = Join-Path $root 'third_party\OFL-1.1.txt' },
+        [pscustomobject]@{ ArchivePath = 'localization/PROVENANCE.md'; Path = Join-Path $root 'localization\PROVENANCE.md' }
+    )
+    foreach ($file in $files) {
+        if (-not (Test-Path -LiteralPath $file.Path -PathType Leaf)) { throw "Release documentation missing: $($file.Path)" }
+    }
+    return $files
+}
+
 function Assert-NoReparsePoint {
     param([Parameter(Mandatory = $true)][string]$Path)
     $itemPath = [IO.Path]::GetFullPath($Path)

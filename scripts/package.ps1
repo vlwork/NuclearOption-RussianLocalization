@@ -23,14 +23,23 @@ if (-not $SkipBuild) {
     & (Join-Path $PSScriptRoot 'build.ps1') -GameDir $GameDir -OutputRoot $BuildRoot
 }
 $entryCount = Test-RussianTranslation (Join-Path $projectRoot 'localization\ru.json')
-$files = @(Get-ProductionFiles -BuildRoot $BuildRoot)
+$runtimeFiles = @(Get-ProductionFiles -BuildRoot $BuildRoot)
+$documentationFiles = @(Get-ReleaseDocumentationFiles)
+$archiveFiles = @(
+    foreach ($file in $runtimeFiles) {
+        [pscustomobject]@{ ArchivePath = 'BepInEx/plugins/LocalizationPatch/' + $file.Name; Path = $file.Path }
+    }
+    foreach ($file in $documentationFiles) {
+        [pscustomobject]@{ ArchivePath = $file.ArchivePath; Path = $file.Path }
+    }
+)
 New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
 $zipPath = Join-Path $outputDir "NuclearOption-RussianLocalization-v$Version.zip"
 $temporaryZip = Join-Path $outputDir ('.validated-' + [guid]::NewGuid().ToString('N') + '.zip')
 $archive = [IO.Compression.ZipFile]::Open($temporaryZip, [IO.Compression.ZipArchiveMode]::Create)
 try {
-    foreach ($file in $files | Sort-Object Name) {
-        $entry = $archive.CreateEntry(('BepInEx/plugins/LocalizationPatch/' + $file.Name), [IO.Compression.CompressionLevel]::Optimal)
+    foreach ($file in $archiveFiles | Sort-Object ArchivePath) {
+        $entry = $archive.CreateEntry($file.ArchivePath, [IO.Compression.CompressionLevel]::Optimal)
         $entry.LastWriteTime = [DateTimeOffset]::new(2020, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
         $inputStream = [IO.File]::OpenRead($file.Path)
         $outputStream = $entry.Open()
@@ -40,15 +49,17 @@ try {
 } finally { $archive.Dispose() }
 $archive = [IO.Compression.ZipFile]::OpenRead($temporaryZip)
 try {
-    if ($archive.Entries.Count -ne 4) { throw 'Archive must contain exactly four production files.' }
-    foreach ($file in $files) {
-        $entries = @($archive.Entries | Where-Object FullName -ceq ('BepInEx/plugins/LocalizationPatch/' + $file.Name))
-        if ($entries.Count -ne 1) { throw "Missing/duplicate/unexpected archive entry: $($file.Name)" }
+    if ($runtimeFiles.Count -ne 4) { throw 'Runtime package input must remain exactly four production files.' }
+    if ($documentationFiles.Count -ne 6) { throw 'Release documentation input must contain exactly six files.' }
+    if ($archive.Entries.Count -ne $archiveFiles.Count) { throw "Archive entry count mismatch: expected $($archiveFiles.Count), found $($archive.Entries.Count)." }
+    foreach ($file in $archiveFiles) {
+        $entries = @($archive.Entries | Where-Object FullName -ceq $file.ArchivePath)
+        if ($entries.Count -ne 1) { throw "Missing/duplicate/unexpected archive entry: $($file.ArchivePath)" }
         $stream = $entries[0].Open()
         $sha = [Security.Cryptography.SHA256]::Create()
         try { $embeddedHash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
         finally { $stream.Dispose(); $sha.Dispose() }
-        if ($embeddedHash -cne (Get-FileHash -LiteralPath $file.Path -Algorithm SHA256).Hash) { throw "Archive content changed: $($file.Name)" }
+        if ($embeddedHash -cne (Get-FileHash -LiteralPath $file.Path -Algorithm SHA256).Hash) { throw "Archive content changed: $($file.ArchivePath)" }
     }
 } finally { $archive.Dispose() }
 # Keep previous local artifacts recoverable; never delete them to make packaging pass.
@@ -59,6 +70,6 @@ if (Test-Path -LiteralPath $zipPath) {
     Move-Item -LiteralPath $zipPath -Destination $previous
 }
 Move-Item -LiteralPath $temporaryZip -Destination $zipPath
-Write-Host "Package validated: four exact files; entries=$entryCount; version=$Version"
+Write-Host "Package validated: four runtime files and six legal documents; entries=$entryCount; version=$Version"
 Write-Host "SHA256: $((Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash)"
 Write-Output $zipPath

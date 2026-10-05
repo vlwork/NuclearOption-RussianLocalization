@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $testRoot = Assert-PathUnderRoot (Join-Path $repoRoot ('.verification\installer-tests-' + [guid]::NewGuid().ToString('N'))) $repoRoot
 $files = @(Get-ProductionFiles -BuildRoot $BuildRoot)
+$documentationFiles = @(Get-ReleaseDocumentationFiles)
 $installer = Join-Path $PSScriptRoot 'install-local.ps1'
 
 function Assert-True { param([bool]$Condition, [string]$Message); if (-not $Condition) { throw $Message } }
@@ -37,6 +38,10 @@ function Assert-Installed {
     foreach ($file in $files) {
         Assert-True ((Get-FileHash -LiteralPath (Join-Path $target $file.Name)).Hash -ceq (Get-FileHash -LiteralPath $file.Path).Hash) "Installed content mismatch: $($file.Name)"
     }
+    foreach ($document in $documentationFiles) {
+        $installedDocument = Join-Path $target ($document.ArchivePath.Replace('/', '\'))
+        Assert-True (-not (Test-Path -LiteralPath $installedDocument)) "Package documentation was installed into the active plugin directory: $($document.ArchivePath)"
+    }
     $localizationDlls = @(Get-ChildItem -LiteralPath (Join-Path $Game 'BepInEx') -Recurse -Filter '*.dll' -File | Where-Object { $_.DirectoryName -notlike '*\core' -and $_.Name -ne 'OtherMod.dll' })
     Assert-True ($localizationDlls.Count -eq 2) 'Backup/duplicate DLL remains under BepInEx.'
 }
@@ -45,8 +50,11 @@ $results = New-Object System.Collections.Generic.List[object]
 $game = New-MockGame 'A clean game with spaces'
 & $installer -GameDir $game -SkipBuild -BuildRoot $BuildRoot
 Assert-Installed $game
-$results.Add([pscustomobject]@{ Test = 'A clean install / E spaces'; Result = 'PASS' })
 $target = Join-Path $game 'BepInEx\plugins\LocalizationPatch'
+$cleanNames = @(Get-ChildItem -LiteralPath $target -File | Sort-Object Name | ForEach-Object Name)
+Assert-True ($cleanNames.Count -eq 4) 'Clean active plugin directory does not contain exactly four runtime files.'
+Assert-True (($cleanNames -join '|') -ceq ((@($files.Name) | Sort-Object) -join '|')) 'Clean active plugin directory contains unexpected file names.'
+$results.Add([pscustomobject]@{ Test = 'A clean install / E spaces'; Result = 'PASS' })
 [IO.File]::WriteAllText((Join-Path $target 'user.cfg'), 'keep-user-config')
 [IO.File]::WriteAllText((Join-Path $target 'OtherMod.dll'), 'unrelated-user-file')
 $beforeUser = (Get-FileHash -LiteralPath (Join-Path $target 'user.cfg')).Hash

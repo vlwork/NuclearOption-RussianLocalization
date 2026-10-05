@@ -1,25 +1,24 @@
 # Licensing
 
-This repository combines materials with different licensing and permission sources.
+This is a mixed-license repository. No single license applies to every file or every portion of a file.
 
-## Project-authored files
+## Repository-authored code and documentation
 
-Build scripts, packaging scripts, installation scripts, and new documentation in this repository are licensed under the MIT License:
+The MIT License in [`LICENSE-CODE`](LICENSE-CODE) applies only to original material whose authorship belongs to this repository's contributors, including eligible scripts, QA tools, build/install/package tooling, documentation, and repository-authored portions of other files.
 
-Copyright (c) 2026 NuclearOption-RussianLocalization contributors
+The repository-authored modifications to the derived plugin source are offered under MIT only to the extent those modifications are independently copyrightable and identifiable. The combined plugin source remains subject to the upstream permission and attribution described below; MIT does not relicense inherited code.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of these files and associated documentation files, to deal in those files without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies, and to permit persons to whom the files are furnished to do so, subject to the following conditions:
+## Repository-authored Russian translations
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the files.
+The Creative Commons Attribution 4.0 International license in [`LICENSE-TRANSLATION`](LICENSE-TRANSLATION) applies only to identifiable Russian translation contributions authored by this repository's contributors.
 
-THE FILES ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE FILES OR THE USE OR OTHER DEALINGS IN THE FILES.
+It does **not** apply to the complete `localization/ru.json`, inherited Russian translations, or English source strings originating from Nuclear Option. See [`localization/PROVENANCE.md`](localization/PROVENANCE.md).
 
-## Adapted plugin source and translation data
+## Inherited and third-party material
 
-`src/LocalizationPatch`, `src/LocalizationPatchDropdown`, and `localization/ru.json` include work derived from the projects maintained by 9138noms and their translation contributors. The upstream author explicitly permits reuse and adaptation for Nuclear Option mods with credit, but the upstream repository does not include a standard license file. Those materials are therefore not relicensed under the MIT section above. Preserve attribution and review the upstream terms before redistributing adaptations.
+- `src/LocalizationPatch` and `src/LocalizationPatchDropdown` are derived from `9138noms/NuclearOption-LocalizationPatch`. The upstream code has no standard license and is not relicensed here.
+- `localization/ru.json` is historically based on `9138noms/NuclearOption-RussianPatch`. Inherited translations are not relicensed here.
+- Nuclear Option source text and other game material remain the property of Shockfront Studios Pty Ltd or its licensors and are outside this repository's license grants.
+- `fonts/Tektur-Reg.ttf` remains under the SIL Open Font License 1.1. The applicable text is in [`third_party/OFL-1.1.txt`](third_party/OFL-1.1.txt).
 
-## Font
-
-`fonts/Tektur-Reg.ttf` is Tektur and is distributed under the SIL Open Font License 1.1. See `THIRD_PARTY_NOTICES.md` for the authoritative license link and attribution.
-
-Nuclear Option, Unity, BepInEx, Harmony, and TextMesh Pro are not part of this repository's license grant.
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for attribution, provenance, upstream permission status, and dependency notices.

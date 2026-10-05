@@ -68,7 +68,14 @@ def regression_check(source):
     baseline = subprocess.check_output(
         ["git", "-c", f"safe.directory={ROOT.as_posix()}", "show", f"{BASELINE}:src/LocalizationPatch/Plugin.cs"],
         cwd=ROOT).decode("utf-8-sig").replace("\r\n", "\n")
-    stripped = source.replace("3.6.4", "3.6.3")
+    provenance = (
+        "// Derived from 9138noms/NuclearOption-LocalizationPatch.\n"
+        "// Upstream permission and attribution: ../../THIRD_PARTY_NOTICES.md.\n"
+        "// Repository-authored modifications do not relicense the inherited source.\n\n"
+    )
+    if not source.startswith(provenance):
+        raise AssertionError("Expected plugin provenance header is missing or changed")
+    stripped = source[len(provenance):].replace("3.6.4", "3.6.3")
     for first, next_anchor in (
         ("        // Reviewed literal ShowMessage", "        internal static bool FontReady"),
         ("        private bool PatchMissionMessageProducer()", "        private void OnDestroy()"),

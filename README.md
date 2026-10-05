@@ -45,7 +45,7 @@ All game references flow through the MSBuild `NuclearOptionDir` property. Game D
 .\scripts\package.ps1 -Version 3.6.4
 ```
 
-This creates `release/NuclearOption-RussianLocalization-v3.6.4.zip` with the `BepInEx/plugins/LocalizationPatch` layout. Packaging runs the same strict QA as the build, checks the source/DLL version, and validates exactly four archive entries (two plugin DLLs, `ru.json`, and Tektur), including their hashes. Previous local packages are retained under ignored `.verification/previous-packages` rather than deleted.
+This creates `release/NuclearOption-RussianLocalization-v3.6.4.zip`. The archive contains exactly four runtime files under `BepInEx/plugins/LocalizationPatch` plus six license, attribution, and provenance documents at archive level. Packaging runs the same strict QA as the build, checks the source/DLL version, and validates every archived file by path and hash. Previous local packages are retained under ignored `.verification/previous-packages` rather than deleted.
 
 For isolated verification, pass a repository-local absolute path to `build.ps1 -OutputRoot`, then use that same path with `package.ps1 -SkipBuild -BuildRoot` and a repository-local `-OutputDirectory`.
 
@@ -67,6 +67,19 @@ For player-facing installation and limitations, see [README_RU.md](README_RU.md)
 ## Translation policy
 
 Model designations and proper vehicle/aircraft/weapon/unit names and codenames remain in their original English spelling, including inside descriptions. Generic nouns such as vessel types and launchers may be translated naturally. `IR Flares`, `Radar Countermeasures`, `Continue`, and `M12 Jackknife` are exact protected identities. General menus, Encyclopedia content, and ordinary UI are translated through `ru.json`. Mission Editor, mission hints, and cockpit/HUD/MFD remain intentionally incomplete; this pass does not expand those areas.
+
+## Licensing and attribution
+
+This is a mixed-license repository.
+
+- Eligible repository-authored scripts, QA tools, runtime modifications, and documentation are offered under the [MIT License](LICENSE-CODE). MIT does not relicense inherited plugin code.
+- Identifiable repository-authored Russian translation contributions are offered under [Creative Commons Attribution 4.0 International](LICENSE-TRANSLATION). This does not license the complete `ru.json`, inherited translations, or English game text.
+- `LocalizationPatch` and `LocalizationPatchDropdown` are derived from [9138noms/NuclearOption-LocalizationPatch](https://github.com/9138noms/NuclearOption-LocalizationPatch). Its upstream permission and pending clarification are documented without describing the inherited code as MIT.
+- The Russian translation is historically based on [9138noms/NuclearOption-RussianPatch](https://github.com/9138noms/NuclearOption-RussianPatch). Preserve credit to Shumatsu [UMA], Jonyx2, and хомяк.
+- Tektur is Copyright 2023 The Tektur Project Authors, was designed by Adam Jagosz, and remains under the SIL Open Font License 1.1.
+- Nuclear Option game text and other game-originating material remain the property of Shockfront Studios Pty Ltd or its licensors and are not licensed by this repository.
+
+See the [license scope](LICENSE.md), [third-party notices](THIRD_PARTY_NOTICES.md), and [translation provenance](localization/PROVENANCE.md) for the exact boundaries and pending questions.
 
 ## Release policy
 
