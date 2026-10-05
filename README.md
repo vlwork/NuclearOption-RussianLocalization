@@ -1,86 +1,364 @@
-# Nuclear Option Russian Localization
+# Nuclear Option — русская локализация
 
-A standalone, maintainable BepInEx 5 localization mod for **Nuclear Option**. This repository contains `LocalizationPatch` 3.6.4 development-candidate source, the Russian translation data, the Cyrillic font, offline build/package scripts, and no game binaries. It preserves the 3.6.3 stabilization and adds producer-scoped localization of 13 reviewed mission messages before feed composition. Join/leave notices and chat are not intercepted; in-game host/client testing is required.
+Русская локализация **Nuclear Option** на базе **BepInEx 5**.
 
-The runtime plugin is based on [9138noms/NuclearOption-LocalizationPatch](https://github.com/9138noms/NuclearOption-LocalizationPatch). Stable 3.6.0 behavior is intentionally preserved:
+Проект предназначен для полноценного использования русского языка в игре и содержит основной плагин локализации, дополнительный модуль для элементов интерфейса, русский словарь и кириллический шрифт.
 
-- TMP text is translated before it visibly flashes in English;
-- both prefix and postfix hooks cover `OnEnable`;
-- a fast active-TMP pass supplements the slower safety sweep;
-- selective AutoFit changes only TMP text sizing;
-- parent `RectTransform` and layout containers are never resized or repositioned.
+Текущая версия локализации основана на ветке разработки **3.6.4** и содержит **3 729 записей перевода**.
 
-The experimental 3.6.1/3.6.2 binaries and the 3.6.2 cockpit hierarchy scanner are not used.
+## Что переводится
 
-## Repository layout
+Локализация охватывает:
 
-- `src/LocalizationPatch` — main BepInEx plugin (`com.noms.localizationpatch`)
-- `src/LocalizationPatchDropdown` — dropdown translation addon
-- `localization/ru.json` — canonical Russian translation, exactly 3,729 entries
-- `fonts/Tektur-Reg.ttf` — Cyrillic fallback font
-- `scripts` — build, package, and local installation scripts
-- `release` — generated GitHub Release ZIP location
+- основные меню;
+- Encyclopedia;
+- большую часть стандартного интерфейса;
+- игровые сообщения;
+- поддерживаемые сообщения миссий;
+- элементы выпадающих списков.
 
-## Build
+Для некоторых названий намеренно сохраняется оригинальное английское написание.
 
-Requirements: Windows PowerShell 5.1+, Python 3.10+ (standard library only), a .NET SDK with locally available .NET Framework 4.7.2 targeting support, Nuclear Option, and BepInEx 5 installed in the game directory. Restore uses an empty local feed and disables NuGet auditing: missing build dependencies fail rather than being downloaded.
+В частности, обозначения моделей, собственные названия техники, вооружения, юнитов и кодовые имена обычно остаются на английском.
+
+Строки:
+
+- `IR Flares`;
+- `Radar Countermeasures`;
+- `Continue`;
+- `M12 Jackknife`
+
+также намеренно сохраняются без перевода.
+
+## Известные ограничения
+
+Локализация пока не считается полностью завершённой.
+
+Частично на английском могут оставаться:
+
+- cockpit / HUD / MFD;
+- Mission Editor;
+- mission hints;
+- новые или изменённые строки после обновлений Nuclear Option.
+
+Плагин намеренно не выполняет агрессивное сканирование всей структуры cockpit и не пытается автоматически изменять каждый авионический дисплей.
+
+Версия 3.6.4 также требует дополнительной проверки непосредственно в игре, включая режимы host/client.
+
+Чат и системные уведомления о подключении и отключении игроков не перехватываются.
+
+# Установка
+
+## Требования
+
+Для установки необходимы:
+
+- Nuclear Option для Windows;
+- BepInEx 5.x;
+- один предварительный запуск игры после установки BepInEx.
+
+## 1. Установите BepInEx
+
+Если BepInEx уже установлен и работает, этот шаг можно пропустить.
+
+После установки BepInEx рекомендуется один раз запустить Nuclear Option и закрыть игру.
+
+В каталоге игры должны появиться папки:
+
+```text
+BepInEx
+BepInEx\plugins
+BepInEx\config
+```
+
+## 2. Найдите папку Nuclear Option
+
+В Steam:
+
+1. Откройте библиотеку.
+2. Нажмите правой кнопкой мыши на **Nuclear Option**.
+3. Выберите **Управление**.
+4. Нажмите **Просмотреть локальные файлы**.
+
+Откроется корневая папка игры.
+
+## 3. Установите локализацию
+
+Скачайте ZIP-архив нужной версии из раздела **Releases** этого репозитория.
+
+Распакуйте архив.
+
+Скопируйте каталог:
+
+```text
+BepInEx
+```
+
+из архива в корневой каталог Nuclear Option.
+
+Разрешите объединение существующих папок.
+
+После установки должны существовать следующие файлы:
+
+```text
+BepInEx\plugins\LocalizationPatch\LocalizationPatch.dll
+BepInEx\plugins\LocalizationPatch\LocalizationPatchDropdown.dll
+BepInEx\plugins\LocalizationPatch\ru.json
+BepInEx\plugins\LocalizationPatch\Tektur-Reg.ttf
+```
+
+Лицензионные документы, расположенные в корне релизного архива, копировать в `BepInEx\plugins` не требуется.
+
+## 4. Запустите игру
+
+Запустите Nuclear Option обычным способом через Steam.
+
+При корректной установке BepInEx плагин локализации загрузится автоматически.
+
+При необходимости язык можно указать вручную в:
+
+```text
+BepInEx\config\com.noms.localizationpatch.cfg
+```
+
+Параметр:
+
+```ini
+Language = ru
+```
+
+# Обновление
+
+Перед обновлением закройте Nuclear Option.
+
+Затем:
+
+1. Скачайте новую версию локализации.
+2. Распакуйте архив.
+3. Скопируйте новые файлы в папку игры поверх существующих.
+4. Разрешите замену старых файлов.
+5. Запустите игру.
+
+При ручном обновлении рекомендуется предварительно сохранить копию:
+
+```text
+BepInEx\plugins\LocalizationPatch
+```
+
+за пределами каталога `BepInEx`.
+
+Не храните старые DLL внутри дерева `BepInEx`, даже если они переименованы в:
+
+```text
+LocalizationPatch.old.dll
+LocalizationPatch.backup.dll
+LocalizationPatch-3.6.3.dll
+```
+
+BepInEx может обнаружить такие файлы как плагины, что способно привести к одновременной загрузке нескольких версий.
+
+# Удаление
+
+Закройте Nuclear Option.
+
+Удалите:
+
+```text
+BepInEx\plugins\LocalizationPatch
+```
+
+При необходимости также можно удалить конфигурацию:
+
+```text
+BepInEx\config\com.noms.localizationpatch.cfg
+```
+
+Оригинальные игровые файлы Nuclear Option при обычной установке локализации напрямую не изменяются.
+
+# Горячие клавиши
+
+- `F10` или `F9` — показать или скрыть диагностическую панель;
+- `Ctrl+F10` — перезагрузить `ru.json`;
+- `Ctrl+F11` — выгрузить игровые строки для работы над переводом.
+
+# Для разработчиков
+
+## Сборка
+
+Требования:
+
+- Windows PowerShell 5.1 или новее;
+- Python 3.10 или новее;
+- .NET SDK;
+- локальная поддержка .NET Framework 4.7.2;
+- установленная Nuclear Option;
+- BepInEx 5.
+
+Сборка:
 
 ```powershell
 .\scripts\build.ps1
 ```
 
-If local execution policy blocks scripts, run `powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1`.
-
-The script searches Steam libraries automatically. An explicit path can be supplied:
+При необходимости можно явно указать каталог игры:
 
 ```powershell
 .\scripts\build.ps1 -GameDir 'G:\SteamLibrary\steamapps\common\Nuclear Option'
 ```
 
-All game references flow through the MSBuild `NuclearOptionDir` property. Game DLLs are never copied into the repository or release.
+Если выполнение PowerShell-скриптов заблокировано политикой системы:
 
-## Package
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1
+```
+
+Игровые DLL используются только как локальные зависимости сборки и не включаются в репозиторий.
+
+## Локальная установка сборки
+
+```powershell
+.\scripts\install-local.ps1 -GameDir 'G:\SteamLibrary\steamapps\common\Nuclear Option'
+```
+
+Перед заменой активной версии скрипт создаёт резервную копию вне дерева `BepInEx`.
+
+Предварительная проверка без изменения файлов:
+
+```powershell
+.\scripts\install-local.ps1 -GameDir 'G:\SteamLibrary\steamapps\common\Nuclear Option' -WhatIf
+```
+
+## Создание релизного архива
 
 ```powershell
 .\scripts\package.ps1 -Version 3.6.4
 ```
 
-This creates `release/NuclearOption-RussianLocalization-v3.6.4.zip`. The archive contains exactly four runtime files under `BepInEx/plugins/LocalizationPatch` plus six license, attribution, and provenance documents at archive level. Packaging runs the same strict QA as the build, checks the source/DLL version, and validates every archived file by path and hash. Previous local packages are retained under ignored `.verification/previous-packages` rather than deleted.
+Создаётся архив вида:
 
-For isolated verification, pass a repository-local absolute path to `build.ps1 -OutputRoot`, then use that same path with `package.ps1 -SkipBuild -BuildRoot` and a repository-local `-OutputDirectory`.
+```text
+release\NuclearOption-RussianLocalization-v3.6.4.zip
+```
 
-## Offline QA and installer tests
+В релизный архив входят четыре runtime-файла в:
+
+```text
+BepInEx/plugins/LocalizationPatch/
+```
+
+а также документы лицензирования, attribution и provenance на уровне корня архива.
+
+## Проверка локализации
 
 ```powershell
 .\scripts\audit-localization.ps1
 .\scripts\audit-localization.ps1 -Strict
 python .\tools\test-localization-qa.py
-.\scripts\install-local.ps1 -GameDir '<game folder>' -WhatIf
 ```
 
-QA is read-only toward localization and runtime files. `config/localization-audit.json` contains identities, designation rules, contextual proper names and review candidates. Strict mode fails objective invariants, not trim/style/context warnings. See `reports/localization-audit.md`, `reports/trim-safety-analysis.md`, and `reports/stabilization-report.md` for reviewed and remaining findings. Coverage is unknown without a local extracted source snapshot.
+Текущий проверенный словарь содержит:
 
-`scripts/test-installer.ps1 -BuildRoot '<isolated build root>'` exercises only newly created repository-local mock games. Verification trees, recovery snapshots and binaries are ignored; intended reports and configuration are not.
+```text
+3 729 записей
+```
 
-For player-facing installation and limitations, see [README_RU.md](README_RU.md).
+# Структура репозитория
 
-## Translation policy
+```text
+src/LocalizationPatch
+```
 
-Model designations and proper vehicle/aircraft/weapon/unit names and codenames remain in their original English spelling, including inside descriptions. Generic nouns such as vessel types and launchers may be translated naturally. `IR Flares`, `Radar Countermeasures`, `Continue`, and `M12 Jackknife` are exact protected identities. General menus, Encyclopedia content, and ordinary UI are translated through `ru.json`. Mission Editor, mission hints, and cockpit/HUD/MFD remain intentionally incomplete; this pass does not expand those areas.
+Основной BepInEx-плагин.
 
-## Licensing and attribution
+```text
+src/LocalizationPatchDropdown
+```
 
-This is a mixed-license repository.
+Дополнительный плагин для элементов выпадающих списков.
 
-- Eligible repository-authored scripts, QA tools, runtime modifications, and documentation are offered under the [MIT License](LICENSE-CODE). MIT does not relicense inherited plugin code.
-- Identifiable repository-authored Russian translation contributions are offered under [Creative Commons Attribution 4.0 International](LICENSE-TRANSLATION). This does not license the complete `ru.json`, inherited translations, or English game text.
-- `LocalizationPatch` and `LocalizationPatchDropdown` are derived from [9138noms/NuclearOption-LocalizationPatch](https://github.com/9138noms/NuclearOption-LocalizationPatch). Its upstream permission and pending clarification are documented without describing the inherited code as MIT.
-- The Russian translation is historically based on [9138noms/NuclearOption-RussianPatch](https://github.com/9138noms/NuclearOption-RussianPatch). Preserve credit to Shumatsu [UMA], Jonyx2, and хомяк.
-- Tektur is Copyright 2023 The Tektur Project Authors, was designed by Adam Jagosz, and remains under the SIL Open Font License 1.1.
-- Nuclear Option game text and other game-originating material remain the property of Shockfront Studios Pty Ltd or its licensors and are not licensed by this repository.
+```text
+localization/ru.json
+```
 
-See the [license scope](LICENSE.md), [third-party notices](THIRD_PARTY_NOTICES.md), and [translation provenance](localization/PROVENANCE.md) for the exact boundaries and pending questions.
+Основной русский словарь.
 
-## Release policy
+```text
+fonts/Tektur-Reg.ttf
+```
 
-The repository is prepared for a GitHub Release, but scripts do not publish, upload, create a GitHub release, or create a Steam Workshop item.
+Шрифт с поддержкой кириллицы.
+
+```text
+scripts
+```
+
+Скрипты сборки, проверки, установки и упаковки.
+
+```text
+tools
+```
+
+Инструменты автоматической проверки локализации.
+
+```text
+reports
+```
+
+Отчёты по аудиту и стабилизации.
+
+# Лицензии и происхождение материалов
+
+Этот репозиторий содержит материалы с различными условиями использования.
+
+Собственные скрипты, QA-инструменты, документация и идентифицируемые изменения, созданные в рамках данного репозитория, распространяются на условиях [MIT License](LICENSE-CODE).
+
+Идентифицируемые русские переводы, созданные участниками этого репозитория, распространяются на условиях [Creative Commons Attribution 4.0 International](LICENSE-TRANSLATION).
+
+Это **не означает**, что MIT или CC BY 4.0 распространяются на весь исторически унаследованный код или весь файл перевода.
+
+`LocalizationPatch` и `LocalizationPatchDropdown` основаны на:
+
+[9138noms/NuclearOption-LocalizationPatch](https://github.com/9138noms/NuclearOption-LocalizationPatch)
+
+Унаследованный код этого проекта данным репозиторием не перелицензируется.
+
+Русский перевод исторически основан на:
+
+[9138noms/NuclearOption-RussianPatch](https://github.com/9138noms/NuclearOption-RussianPatch)
+
+Сохраняется указание авторства предыдущих участников перевода:
+
+- Shumatsu [UMA];
+- Jonyx2;
+- хомяк.
+
+Условия повторного использования унаследованных частей перевода требуют отдельного уточнения.
+
+Шрифт **Tektur** распространяется на условиях **SIL Open Font License 1.1**.
+
+Текст Nuclear Option и другие материалы, происходящие непосредственно из игры, остаются собственностью **Shockfront Studios Pty Ltd** или соответствующих лицензиаров и не лицензируются данным репозиторием.
+
+Подробные условия и границы происхождения материалов:
+
+- [LICENSE.md](LICENSE.md)
+- [LICENSE-CODE](LICENSE-CODE)
+- [LICENSE-TRANSLATION](LICENSE-TRANSLATION)
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+- [localization/PROVENANCE.md](localization/PROVENANCE.md)
+- [third_party/README.md](third_party/README.md)
+
+# Благодарности
+
+Проект основан на предыдущей работе сообщества Nuclear Option.
+
+Отдельная благодарность:
+
+- Shumatsu [UMA];
+- Jonyx2;
+- хомяк;
+- 9138noms;
+- другим участникам исходных проектов локализации и плагина.
+
+---
+
+**Nuclear Option — русская локализация** является независимым неофициальным проектом сообщества и не является продуктом Shockfront Studios.
