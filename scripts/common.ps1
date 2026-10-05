@@ -132,6 +132,18 @@ function Get-ReleaseDocumentationFiles {
     return $files
 }
 
+function Get-ReleaseInstallerFiles {
+    $root = Split-Path $PSScriptRoot -Parent
+    $files = @(
+        [pscustomobject]@{ ArchivePath = 'Install.ps1'; Path = Join-Path $root 'installer\Install.ps1' },
+        [pscustomobject]@{ ArchivePath = 'Install.cmd'; Path = Join-Path $root 'installer\Install.cmd' }
+    )
+    foreach ($file in $files) {
+        if (-not (Test-Path -LiteralPath $file.Path -PathType Leaf)) { throw "Release installer missing: $($file.Path)" }
+    }
+    return $files
+}
+
 function Assert-NoReparsePoint {
     param([Parameter(Mandatory = $true)][string]$Path)
     $itemPath = [IO.Path]::GetFullPath($Path)

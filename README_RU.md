@@ -10,32 +10,45 @@
 
 ## Установка
 
-1. Скачайте ZIP из GitHub Release.
-2. Распакуйте его в корень Nuclear Option с сохранением структуры папок.
-3. Убедитесь, что существуют файлы:
-   - `BepInEx\plugins\LocalizationPatch\LocalizationPatch.dll`;
-   - `BepInEx\plugins\LocalizationPatch\LocalizationPatchDropdown.dll`;
-   - `BepInEx\plugins\LocalizationPatch\ru.json`;
-   - `BepInEx\plugins\LocalizationPatch\Tektur-Reg.ttf`.
-4. Запустите игру. При необходимости задайте `Language = ru` в `BepInEx\config\com.noms.localizationpatch.cfg`.
+1. Установите BepInEx 5.x в Nuclear Option и один раз запустите игру.
+2. Скачайте ZIP из GitHub Release.
+3. Распакуйте архив в любую папку.
+4. Запустите `Install.cmd`.
+5. Если Nuclear Option не будет найдена автоматически, выберите вручную папку, содержащую `NuclearOption.exe`.
 
-Для установки собранной локальной версии разработчик может выполнить:
+Установщик проверяет BepInEx, создаёт резервную копию предыдущей локализации вне дерева `BepInEx`, обнаруживает дубли старых сборок и устанавливает только четыре runtime-файла:
+
+- `LocalizationPatch.dll`;
+- `LocalizationPatchDropdown.dll`;
+- `ru.json`;
+- `Tektur-Reg.ttf`.
+
+Лицензионные и provenance-документы остаются в релизном пакете и в активный каталог плагина не копируются.
+
+Если `Install.cmd` нельзя запустить, из распакованного релизного архива используйте:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
+```
+
+Для установки собранной локальной версии разработчик по-прежнему может использовать:
 
 ```powershell
 .\scripts\install-local.ps1 -GameDir 'G:\SteamLibrary\steamapps\common\Nuclear Option'
 ```
-
-Скрипт сохраняет полную резервную копию прежней папки в `<папка игры>\LocalizationPatchBackups\<уникальная метка>`, вне всего дерева `BepInEx`. Копия создаётся до замены файлов. Для предварительного просмотра без сборки и изменения файлов добавьте `-WhatIf`. Для сборки и проверок нужны Python 3.10+, Windows PowerShell 5.1+ и локальные средства сборки .NET Framework 4.7.2.
-
 ## Обновление
 
-Закройте игру и установите новую версию поверх старой. При ручном обновлении сначала сохраните копию `BepInEx\plugins\LocalizationPatch` вне всего дерева `BepInEx`. Не оставляйте внутри `BepInEx` старые DLL, даже если в имени есть `backup`, `old` или номер версии: такие копии могут быть обнаружены загрузчиком.
+Закройте игру, скачайте новый релиз, распакуйте его и снова запустите `Install.cmd`.
 
-`install-local.ps1` делает резервную копию автоматически, находит дубли по имени управляемой сборки (даже при переименованном файле) и переносит подтверждённые дубли из `BepInEx\plugins` во внешнюю копию. Старую папку `BepInEx\LocalizationPatchBackups` он также переносит наружу. Неоднозначные DLL блокируют установку до ручной проверки; посторонние файлы и настройки сохраняются. Затем устанавливаются две активные DLL, словарь и шрифт:
+Перед заменой файлов установщик автоматически создаёт отдельную резервную копию в:
 
-- `LocalizationPatch.dll`;
-- `LocalizationPatchDropdown.dll`.
+```text
+<папка игры>\LocalizationPatchBackups\<уникальная метка>
+```
 
+Резервные копии находятся вне всего дерева `BepInEx`.
+
+При ручном обновлении не оставляйте внутри `BepInEx` старые DLL, даже если в имени есть `backup`, `old` или номер версии: BepInEx может загрузить их одновременно с новой версией.
 ## Удаление
 
 1. Закройте игру.

@@ -25,11 +25,15 @@ if (-not $SkipBuild) {
 $entryCount = Test-RussianTranslation (Join-Path $projectRoot 'localization\ru.json')
 $runtimeFiles = @(Get-ProductionFiles -BuildRoot $BuildRoot)
 $documentationFiles = @(Get-ReleaseDocumentationFiles)
+$installerFiles = @(Get-ReleaseInstallerFiles)
 $archiveFiles = @(
     foreach ($file in $runtimeFiles) {
         [pscustomobject]@{ ArchivePath = 'BepInEx/plugins/LocalizationPatch/' + $file.Name; Path = $file.Path }
     }
     foreach ($file in $documentationFiles) {
+        [pscustomobject]@{ ArchivePath = $file.ArchivePath; Path = $file.Path }
+    }
+    foreach ($file in $installerFiles) {
         [pscustomobject]@{ ArchivePath = $file.ArchivePath; Path = $file.Path }
     }
 )
@@ -51,6 +55,8 @@ $archive = [IO.Compression.ZipFile]::OpenRead($temporaryZip)
 try {
     if ($runtimeFiles.Count -ne 4) { throw 'Runtime package input must remain exactly four production files.' }
     if ($documentationFiles.Count -ne 6) { throw 'Release documentation input must contain exactly six files.' }
+    if ($installerFiles.Count -ne 2) { throw 'Release installer input must contain exactly two files.' }
+    if ($archive.Entries.Count -ne 12) { throw "Release archive must contain exactly 12 entries; found $($archive.Entries.Count)." }
     if ($archive.Entries.Count -ne $archiveFiles.Count) { throw "Archive entry count mismatch: expected $($archiveFiles.Count), found $($archive.Entries.Count)." }
     foreach ($file in $archiveFiles) {
         $entries = @($archive.Entries | Where-Object FullName -ceq $file.ArchivePath)
@@ -70,6 +76,6 @@ if (Test-Path -LiteralPath $zipPath) {
     Move-Item -LiteralPath $zipPath -Destination $previous
 }
 Move-Item -LiteralPath $temporaryZip -Destination $zipPath
-Write-Host "Package validated: four runtime files and six legal documents; entries=$entryCount; version=$Version"
+Write-Host "Package validated: four runtime files, six legal documents, and two installer files; entries=$entryCount; version=$Version"
 Write-Host "SHA256: $((Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash)"
 Write-Output $zipPath
