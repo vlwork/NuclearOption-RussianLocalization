@@ -1,8 +1,8 @@
 # Release output
 
-Run `..\scripts\package.ps1 -Version 3.6.4` from the repository root to generate:
+Run `..\scripts\package.ps1 -Version 3.6.5` from the repository root to generate:
 
-`NuclearOption-RussianLocalization-v3.6.4.zip`
+`NuclearOption-RussianLocalization-v3.6.5.zip`
 
 The archive contains exactly 12 entries:
 
