@@ -75,7 +75,34 @@ def regression_check(source):
     )
     if not source.startswith(provenance):
         raise AssertionError("Expected plugin provenance header is missing or changed")
-    stripped = source[len(provenance):].replace("3.6.4", "3.6.3")
+    # Reverse only the explicit 3.6.5 UI delta; the remainder still matches 3.6.3 exactly.
+    # Изменения UI проверяются отдельно реальными Harmony-фикстурами.
+    stripped = source[len(provenance):].replace("3.6.5", "3.6.3")
+    start = stripped.index("        private static readonly Type ChatAutocompleteType")
+    end = stripped.index("        static class MissionMessages_Local_Patch", start)
+    stripped = stripped[:start] + stripped[end:]
+    for addition, count in (
+        ("            if (IsProtectedPlayerText(tmp)) return false;\n", 1),
+        ("                if (IsProtectedPlayerText(__instance)) return;\n", 2),
+        ("            if (PatchChatAutocompleteHeader()) applied++;\n", 1),
+    ):
+        if stripped.count(addition) != count:
+            raise AssertionError("Protected UI guard count changed")
+        stripped = stripped.replace(addition, "")
+    stripped = stripped.replace(
+        "        // False means this component must also bypass fitting. / False запрещает и AutoFit.\n", "")
+    component = definition(stripped, "internal bool TranslateTmpComponent(")
+    restored = component.replace("internal bool", "internal void", 1)
+    restored = restored.replace("            return true;\n        }", "        }")
+    restored = restored.replace("return false;", "return;").replace("return true;", "return;")
+    stripped = stripped.replace(component, restored)
+    stripped = stripped.replace("                    if (!TranslateTmpComponent(tmp)) continue;",
+                                "\n                    TranslateTmpComponent(tmp);")
+    stripped = stripped.replace(
+        "        // Argument index works for both the one-argument and optional-bool overloads.",
+        "        // Patch TMP_Text.SetText(string) method (may not exist in all TMP versions)")
+    method_patch = definition(stripped, "static class TMP_Text_SetTextMethod_Patch")
+    stripped = stripped.replace(method_patch, method_patch.replace("__0", "sourceText"))
     for first, next_anchor in (
         ("        // Reviewed literal ShowMessage", "        internal static bool FontReady"),
         ("        private bool PatchMissionMessageProducer()", "        private void OnDestroy()"),
@@ -90,7 +117,7 @@ def regression_check(source):
         raise AssertionError("Producer registration count changed")
     stripped = stripped.replace(addition, "")
     if stripped != baseline:
-        raise AssertionError("Unexpected Plugin.cs change outside version and reviewed mission hook")
+        raise AssertionError("Unexpected Plugin.cs change outside version and reviewed mission/UI changes")
 
 
 def main():
@@ -108,7 +135,7 @@ def main():
         raise ValueError("Local .NET Framework compiler and BepInEx Harmony are required; never downloaded")
     source = (ROOT / "src/LocalizationPatch/Plugin.cs").read_text(encoding="utf-8-sig")
     regression_check(source)
-    print("PASS: Plugin.cs regression boundary (all old logic byte-for-text unchanged)", flush=True)
+    print("PASS: Plugin.cs regression boundary (logic outside reviewed mission/UI changes unchanged)", flush=True)
     manifest = json.loads((ROOT / "config/mission-messages.json").read_text(encoding="utf-8"))
     allowlist = definition(source, "private static readonly HashSet<string> ReviewedMissionMessages", field=True)
     literals = re.findall(r'"(?:\\.|[^"\\])*"', allowlist)

@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.6.5 — 2026-10-31 (compatibility candidate, not published)
+
+- Reviewed installed Nuclear Option 0.34.6 / Steam build 26327221 with read-only metadata analysis.
+- Added seven exact interface labels (Recent, Commands, Mention player, Suggestions, Mod Required, No faction, Not flying); preserved all 3,729 baseline entries and values.
+- Translate three Russian autocomplete headings at the exact `ChatAutocompleteUI.SetHeader(ChatAutocompleteEngine, int)` producer. The reviewed TMP `SetText(string, bool)` overload remains unpatched globally.
+- Exclude editable TMP input, chat suggestion rows, the two composed message displays and exact player-name fields in chat hover cards, allow/ban entries and leaderboard rows from Russian generic TMP translation and fitting. The fast pass performs this guard once per component. Mission messages still use only the existing 13-message producer allowlist; network messages and command handling are untouched.
+- Preserve non-Russian hook selection, existing scan timing, dropdowns and text-only AutoFit. No in-game compatibility claim; see `reports/game-0346-compatibility.md`.
+
 ## 3.6.4 — 2026-10-03 (development candidate)
 
 - Added 13 reviewed static Reprisal mission messages (3,716 → 3,729 entries), preserving all existing values and K92/PALA/proper names.

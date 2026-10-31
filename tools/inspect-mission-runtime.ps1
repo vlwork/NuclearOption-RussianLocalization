@@ -2,7 +2,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$GameAssembly,
     [Parameter(Mandatory = $true)][string]$CecilPath,
-    [Parameter(Mandatory = $true)][string]$OutputDirectory
+    [Parameter(Mandatory = $true)][string]$OutputDirectory,
+    [ValidatePattern('^[A-Fa-f0-9]{64}$')][string]$ExpectedAssemblySha256
 )
 
 Set-StrictMode -Version 2.0
@@ -14,7 +15,10 @@ Assert-NoReparsePoint $outputRoot
 if (Test-Path -LiteralPath $outputRoot) { throw 'Use a new verification directory; existing evidence is never overwritten.' }
 $manifest = Get-Content -LiteralPath (Join-Path $projectRoot 'config\mission-messages.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $assemblyHash = (Get-FileHash -LiteralPath $GameAssembly -Algorithm SHA256).Hash
-if ($assemblyHash -cne $manifest.assemblySha256) { throw 'Game assembly differs from the reviewed provenance. Re-review before patching.' }
+if (-not $ExpectedAssemblySha256) { $ExpectedAssemblySha256 = $manifest.assemblySha256 }
+# Explicit hash pin permits a new static review, never a silent provenance refresh.
+# Явный хеш разрешает новый анализ; исторический manifest не перезаписывается.
+if ($assemblyHash -cne $ExpectedAssemblySha256.ToUpperInvariant()) { throw 'Game assembly differs from the requested provenance. Re-review before patching.' }
 
 # Metadata/IL only: Cecil does NOT execute the game assembly / DLL игры не выполняется.
 Add-Type -Path $CecilPath

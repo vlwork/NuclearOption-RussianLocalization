@@ -1,0 +1,16 @@
+{
+  "gameVersion": "0.34.6",
+  "steamBuild": "26327221",
+  "assemblySha256": "BABDD626BBAB5F01E6C244150C1E77C57C131EE86967214E2E5CED6D813C2BCE",
+  "baselineCommit": "8046c91",
+  "baselineEntryCount": 3729,
+  "translations": [
+    {"source": "Recent", "russian": "Недавние", "producer": "NuclearOption.SavedMission.RecentGroup::.ctor"},
+    {"source": "Commands", "russian": "Команды", "producer": "NuclearOption.Chat.ChatAutocompleteUI::SetHeader"},
+    {"source": "Mention player", "russian": "Упомянуть игрока", "producer": "NuclearOption.Chat.ChatAutocompleteUI::SetHeader"},
+    {"source": "Suggestions", "russian": "Подсказки", "producer": "NuclearOption.Chat.ChatAutocompleteUI::SetHeader"},
+    {"source": "Mod Required", "russian": "Требуется мод", "producer": "NuclearOption.SavedMission.MissionTag::.cctor"},
+    {"source": "No faction", "russian": "Без фракции", "producer": "NuclearOption.Chat.ChatHoverCardUI::Show"},
+    {"source": "Not flying", "russian": "Не в полёте", "producer": "NuclearOption.Chat.ChatHoverCardUI::Show"}
+  ]
+}

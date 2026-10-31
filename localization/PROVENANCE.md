@@ -9,7 +9,7 @@ This document records the known provenance and current licensing boundary for `l
   - Shumatsu [UMA]
   - Jonyx2
   - хомяк
-- Current local entry count: 3,729
+- Current local entry count: 3,736
 
 The English keys include interface text, mission messages, Encyclopedia descriptions, lore, and other source strings originating from Nuclear Option. Those strings remain the property of Shockfront Studios Pty Ltd or its licensors and are not licensed by this repository.
 
@@ -25,6 +25,7 @@ The Creative Commons Attribution 4.0 International license in `../LICENSE-TRANSL
 - `8594a28` added localization safeguards and trim-safety work, including reviewed localization changes.
 - `fde844a` recorded the 3.6.3 stabilization: 16 reviewed boundary-whitespace key normalizations and 23 reviewed value corrections while retaining 3,716 entries.
 - `8046c91` added 13 reviewed Russian mission-message translations, increasing the count from 3,716 to 3,729.
+- The uncommitted 3.6.5 compatibility candidate adds seven repository-authored Russian UI values, listed with their game producers and build hash in `../config/game-0346-ui.json` (3,729 → 3,736). Its English keys remain game-originating material.
 
 These commit boundaries document local changes, not ownership of unchanged or previously imported entries.
 

@@ -19,7 +19,7 @@ using UnityEngine.TextCore.LowLevel;
 
 namespace KoreanPatch
 {
-    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.6.4")]
+    [BepInPlugin("com.noms.localizationpatch", "Localization Patch", "3.6.5")]
     public class Plugin : BaseUnityPlugin
     {
         private sealed class AutoFitState
@@ -196,7 +196,7 @@ namespace KoreanPatch
             // Also register scene load callback as additional safety net
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Log.LogInfo($"Localization Patch v3.6.4 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
+            Log.LogInfo($"Localization Patch v3.6.5 loaded — lang={CurrentLanguage}, {Translations.Count} translations, Font: {fontStatusText}");
         }
 
         /// <summary>
@@ -312,6 +312,7 @@ namespace KoreanPatch
             }
 
             if (PatchMissionMessageProducer()) applied++;
+            if (PatchChatAutocompleteHeader()) applied++;
 
             Log.LogInfo($"Harmony: {applied} patches applied successfully");
         }
@@ -1085,12 +1086,14 @@ namespace KoreanPatch
         /// been shown gets translated in the same frame instead of flashing English until the
         /// next sweep comes around.
         /// </summary>
-        internal void TranslateTmpComponent(TMP_Text tmp)
+        // False means this component must also bypass fitting. / False запрещает и AutoFit.
+        internal bool TranslateTmpComponent(TMP_Text tmp)
         {
-            if (tmp == null || tmp.gameObject == null) return;
+            if (tmp == null || tmp.gameObject == null) return false;
+            if (IsProtectedPlayerText(tmp)) return false;
 
             string current = tmp.text;
-            if (string.IsNullOrEmpty(current)) return;
+            if (string.IsNullOrEmpty(current)) return true;
 
             int id = tmp.GetInstanceID();
             string trimmed = current.Trim();
@@ -1105,14 +1108,14 @@ namespace KoreanPatch
                     // so it can equally be a *new* English string we have no entry for.
                     // RecordUntranslated ignores anything non-ASCII, which separates the two.
                     RecordUntranslated(trimmed);
-                    return;
+                    return true;
                 }
                 // text was reset to English — remove from cache and re-translate below
                 translatedInstances.Remove(id);
             }
 
             // Skip DialogueBox title — translating it breaks the Ok button
-            if (IsDialogueBoxTitle(tmp)) return;
+            if (IsDialogueBoxTitle(tmp)) return true;
 
             string translated = TranslationKeys.Contains(trimmed)
                 ? Translations[trimmed]
@@ -1136,6 +1139,7 @@ namespace KoreanPatch
             {
                 RecordUntranslated(trimmed);
             }
+            return true;
         }
 
         /// <summary>
@@ -1151,8 +1155,7 @@ namespace KoreanPatch
                 {
                     if (tmp == null || tmp.gameObject == null || !tmp.enabled || !tmp.gameObject.activeInHierarchy)
                         continue;
-
-                    TranslateTmpComponent(tmp);
+                    if (!TranslateTmpComponent(tmp)) continue;
 
                     string current = tmp.text;
                     if (!string.IsNullOrEmpty(current))
@@ -1971,6 +1974,113 @@ namespace KoreanPatch
 
         #region Harmony Patches
 
+        private static readonly Type ChatAutocompleteType = typeof(MissionMessages).Assembly.GetType(
+            "NuclearOption.Chat.ChatAutocompleteUI", false);
+        private static readonly Type ChatAutocompleteEngineType = typeof(MissionMessages).Assembly.GetType(
+            "NuclearOption.Chat.ChatAutocompleteEngine", false);
+        private static readonly FieldInfo ChatHeaderTitleField = ChatAutocompleteType?.GetField("headerTitle",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+        private static MethodInfo FindChatHeaderTarget(Type uiType, Type engineType)
+        {
+            if (uiType == null || engineType == null) return null;
+            var method = uiType.GetMethod("SetHeader", BindingFlags.Instance | BindingFlags.Public |
+                BindingFlags.NonPublic | BindingFlags.DeclaredOnly,
+                null, new Type[] { engineType, typeof(int) }, null);
+            return method != null && method.ReturnType == typeof(void) ? method : null;
+        }
+
+        private bool PatchChatAutocompleteHeader()
+        {
+            if (CurrentLanguage != "ru") return false;
+            try
+            {
+                var target = FindChatHeaderTarget(ChatAutocompleteType, ChatAutocompleteEngineType);
+                if (target == null || ChatHeaderTitleField == null ||
+                    !typeof(TMP_Text).IsAssignableFrom(ChatHeaderTitleField.FieldType))
+                {
+                    Log.LogWarning("Chat autocomplete header signature unavailable; header localization skipped");
+                    return false;
+                }
+                var postfix = typeof(ChatAutocomplete_Header_Patch).GetMethod("Postfix",
+                    BindingFlags.Static | BindingFlags.NonPublic);
+                HarmonyInstance.Patch(target, postfix: new HarmonyMethod(postfix));
+                Log.LogInfo("Patched: ChatAutocompleteUI.SetHeader — three reviewed UI labels only");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning("Chat header patch failed: " + e.Message);
+                return false;
+            }
+        }
+
+        static class ChatAutocomplete_Header_Patch
+        {
+            static void Postfix(object __instance)
+            {
+                if (isPatching || !Enabled || Instance == null || CurrentLanguage != "ru" ||
+                    __instance == null || ChatHeaderTitleField == null) return;
+                // Scope by producer, field and exact label; never intercept arbitrary SetText(bool).
+                // Только три метки заголовка; команды, аргументы и имена сюда не попадают.
+                var text = ChatHeaderTitleField.GetValue(__instance) as TMP_Text;
+                if (text == null) return;
+                string value = text.text;
+                if (value == "Commands" || value == "Mention player" || value == "Suggestions")
+                    Instance.TranslateTmpComponent(text);
+            }
+        }
+
+        // Optional new UI type: do not make plugin loading depend on its presence.
+        // Новый тип необязателен; имена/команды/история подсказок не переводятся.
+        private static readonly Type ChatSuggestionRowType = typeof(MissionMessages).Assembly.GetType(
+            "NuclearOption.Chat.ChatSuggestionItemUI", false);
+        private static readonly FieldInfo MessageDisplayField = typeof(MessageUI).GetField("messageText",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        private static readonly FieldInfo KillFeedDisplayField = typeof(MessageUI).GetField("killFeedText",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        private static readonly Type ChatHoverCardType = typeof(MissionMessages).Assembly.GetType(
+            "NuclearOption.Chat.ChatHoverCardUI", false);
+        private static readonly FieldInfo ChatHoverNameField = ChatHoverCardType?.GetField("nameText",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        private static readonly Type AllowBanItemType = typeof(MissionMessages).Assembly.GetType(
+            "NuclearOption.Chat.AllowBanListItem", false);
+        private static readonly FieldInfo AllowBanNameField = AllowBanItemType?.GetField("nameText",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        private static readonly Type LeaderboardEntryType = typeof(MissionMessages).Assembly.GetType(
+            "LeaderboardPlayerEntry", false);
+        private static readonly FieldInfo LeaderboardNameField = LeaderboardEntryType?.GetField("textName",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+        private static bool IsOwnedTextField(TMP_Text text, Type ownerType, FieldInfo field)
+        {
+            if (ownerType == null || field == null) return false;
+            var owner = text.GetComponentInParent(ownerType, true);
+            return owner != null && ReferenceEquals(field.GetValue(owner), text);
+        }
+
+        private static bool IsProtectedPlayerText(TMP_Text text)
+        {
+            if (CurrentLanguage != "ru" || text == null) return false;
+            // Only the editable text component, not its fixed placeholder/caption.
+            // Защищаем текст ввода, но оставляем перевод статической подсказки.
+            var input = text.GetComponentInParent<TMP_InputField>(true);
+            if (input != null && input.textComponent == text) return true;
+            if (ChatSuggestionRowType != null && text.GetComponentInParent(ChatSuggestionRowType, true) != null)
+                return true;
+            // These exact display fields contain player names even when they equal UI keys.
+            // Защищаем конкретные поля имён; кнопки карточек и таблицы продолжают переводиться.
+            if (IsOwnedTextField(text, ChatHoverCardType, ChatHoverNameField) ||
+                IsOwnedTextField(text, AllowBanItemType, AllowBanNameField) ||
+                IsOwnedTextField(text, LeaderboardEntryType, LeaderboardNameField)) return true;
+            // The composed feed can contain player bodies/names matching dictionary keys.
+            // Не обрабатываем готовую ленту; разрешённые сообщения переводятся у источника.
+            var messages = text.GetComponentInParent<MessageUI>(true);
+            return messages != null && (
+                (MessageDisplayField != null && ReferenceEquals(MessageDisplayField.GetValue(messages), text)) ||
+                (KillFeedDisplayField != null && ReferenceEquals(KillFeedDisplayField.GetValue(messages), text)));
+        }
+
         static class MissionMessages_Local_Patch
         {
             // Harmony argument 0 is a local display-string copy; sound/faction arguments stay intact.
@@ -2043,6 +2153,7 @@ namespace KoreanPatch
             static void Prefix(TMP_Text __instance, ref string value)
             {
                 if (isPatching || !Enabled || string.IsNullOrEmpty(value)) return;
+                if (IsProtectedPlayerText(__instance)) return;
                 if (IsDialogueBoxTitle(__instance)) return; // Don't translate dialog titles
                 isPatching = true;
                 try
@@ -2076,20 +2187,21 @@ namespace KoreanPatch
             }
         }
 
-        // Patch TMP_Text.SetText(string) method (may not exist in all TMP versions)
+        // Argument index works for both the one-argument and optional-bool overloads.
         static class TMP_Text_SetTextMethod_Patch
         {
-            static void Prefix(TMP_Text __instance, ref string sourceText)
+            static void Prefix(TMP_Text __instance, ref string __0)
             {
-                if (isPatching || !Enabled || string.IsNullOrEmpty(sourceText)) return;
+                if (isPatching || !Enabled || string.IsNullOrEmpty(__0)) return;
+                if (IsProtectedPlayerText(__instance)) return;
                 if (IsDialogueBoxTitle(__instance)) return;
                 isPatching = true;
                 try
                 {
-                    string translated = Translate(sourceText);
-                    if (translated != sourceText)
+                    string translated = Translate(__0);
+                    if (translated != __0)
                     {
-                        sourceText = translated;
+                        __0 = translated;
                         if (FontReady && ContainsKorean(translated))
                             EnsureKoreanFallback(__instance);
                     }
@@ -2160,7 +2272,7 @@ namespace KoreanPatch
         private void DrawWindow(int id)
         {
             GUILayout.BeginVertical();
-            GUILayout.Label($"Localization Patch v3.6.4 ({CurrentLanguage})", headerStyle);
+            GUILayout.Label($"Localization Patch v3.6.5 ({CurrentLanguage})", headerStyle);
             GUILayout.Space(5);
 
             GUILayout.BeginHorizontal();

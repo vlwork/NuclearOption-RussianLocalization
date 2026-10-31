@@ -108,7 +108,10 @@ class MissionTests(unittest.TestCase):
         pairs = json.loads((audit.ROOT / "localization/ru.json").read_text(encoding="utf-8-sig"), object_pairs_hook=list)
         russian = dict(pairs)
         self.assertEqual(len(pairs), len(russian))
-        self.assertEqual(len(russian), manifest["baselineEntryCount"] + len(manifest["translations"]))
+        ui = json.loads((audit.ROOT / "config/game-0346-ui.json").read_text(encoding="utf-8"))
+        mission_count = manifest["baselineEntryCount"] + len(manifest["translations"])
+        self.assertEqual(mission_count, ui["baselineEntryCount"])
+        self.assertEqual(len(russian), mission_count + len(ui["translations"]))
         for item in manifest["translations"]:
             self.assertEqual(russian[item["source"]], item["russian"])
         for identity in ("IR Flares", "Radar Countermeasures", "Continue", "M12 Jackknife"):
