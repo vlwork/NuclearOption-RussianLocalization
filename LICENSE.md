@@ -14,6 +14,8 @@ The Creative Commons Attribution 4.0 International license in [`LICENSE-TRANSLAT
 
 It does **not** apply to the complete `localization/ru.json`, inherited Russian translations, or English source strings originating from Nuclear Option. See [`localization/PROVENANCE.md`](localization/PROVENANCE.md).
 
+Editing an inherited translation does not by itself establish independent authorship or bring the underlying translation under this grant.
+
 ## Inherited and third-party material
 
 - `src/LocalizationPatch` and `src/LocalizationPatchDropdown` are derived from `9138noms/NuclearOption-LocalizationPatch`. The upstream code has no standard license and is not relicensed here.

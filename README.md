@@ -305,6 +305,8 @@ reports
 
 Это **не означает**, что MIT или CC BY 4.0 распространяются на весь исторически унаследованный код или весь файл перевода.
 
+Редактирование унаследованного перевода само по себе не подтверждает независимое авторство и не меняет условий его использования. История происхождения описана в [localization/PROVENANCE.md](localization/PROVENANCE.md).
+
 `LocalizationPatch` и `LocalizationPatchDropdown` основаны на:
 
 [9138noms/NuclearOption-LocalizationPatch](https://github.com/9138noms/NuclearOption-LocalizationPatch)

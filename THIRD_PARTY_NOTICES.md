@@ -17,6 +17,7 @@ That README permission is informal and is **not** represented here as MIT. Repos
 - Upstream source: https://github.com/9138noms/NuclearOption-RussianPatch
 - Local file: `localization/ru.json`
 - Current entry count: 3,736
+- Dictionary version: 3.6.5; wording corrections do not change the provenance or licensing of inherited material.
 - Credited inherited translation contributors:
   - Shumatsu [UMA]
   - Jonyx2
